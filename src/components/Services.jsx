@@ -6,8 +6,8 @@ const Services = () => {
       description: "Complete network solutions including design, installation, and maintenance for reliable business infrastructure."
     },
     {
-      icon: "fas fa-desktop",
-      title: "Onsite Support",
+      icon: "fas fa-truck",
+      title: "Field Services Vending",
       description: "Professional IT support at your location with rapid response times and expert technicians."
     },
     {
@@ -32,7 +32,7 @@ const Services = () => {
     },
     {
       icon: "fas fa-users-cog",
-      title: "Staff Augmentation",
+      title: "Onsite Support/Staff Augmentation",
       description: "Flexible IT staffing solutions to supplement your existing team or project needs."
     },
     {

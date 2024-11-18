@@ -69,7 +69,7 @@ export default function ServicesRequestForm() {
                   htmlFor="organization"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Organization
+                  Name of organization
                 </label>
                 <input
                   type="text"
