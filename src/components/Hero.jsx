@@ -68,8 +68,8 @@ const Hero = () => {
               the digital age
             </p>
             <div className="flex gap-4 transform transition-all duration-700 delay-1200">
-              <div className="bg-sky-blue text-white px-8 py-3 rounded-full hover:bg-sky-700 transition duration-300 flex items-center whitespace-nowrap group">
-                <ServiceRequestForm />
+              <a href="#contact" className="bg-sky-blue text-white px-8 py-3 rounded-full hover:bg-sky-700 transition duration-300 flex items-center whitespace-nowrap group">
+                Get started
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-5 w-5 ml-2 transform transition-transform duration-300 group-hover:translate-x-1"
@@ -82,7 +82,7 @@ const Hero = () => {
                     clipRule="evenodd"
                   />
                 </svg>
-              </div>
+              </a>
               {/* <a
                 href="#contact"
                 className="bg-sky-blue text-white px-8 py-3 rounded-full hover:bg-sky-700 transition duration-300 flex items-center whitespace-nowrap group"
