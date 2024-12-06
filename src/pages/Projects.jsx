@@ -6,7 +6,6 @@ import w5 from "../assets/w1 (5).jpg";
 import w6 from "../assets/w1 (6).jpg";
 import w7 from "../assets/w1 (7).jpg";
 import w8 from "../assets/w1 (8).jpg";
-import ServiceRequestForm from "./ServiceRequestForm";
 
 const Projects = () => {
   const projects = [
@@ -40,10 +39,6 @@ const Projects = () => {
             </div>
           ))}
         </div>
-      </div>
-
-      <div className="w-fit mt-20 mb-1ool bg-sky-blue text-white px-8 py-3 rounded-full hover:bg-sky-700 flex items-center justify-center mx-auto">
-        <ServiceRequestForm />
       </div>
     </section>
   );
