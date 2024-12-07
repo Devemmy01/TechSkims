@@ -26,12 +26,12 @@ export default function AdminSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }) 
       <aside
         className={`${
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        } fixed inset-y-0 left-0 z- w-64 transform border-r bg-white transition-transform duration-200 ease-in-out overflow-y-scroll lg:relative lg:translate-x-0`}
+        } fixed inset-y-0 left-0 w-64 transform border-r bg-white transition-transform duration-200 ease-in-out overflow-y-scroll lg:relative lg:translate-x-0`}
       >
         <div className="flex h-16 items-center border-b px-6">
           <img src={logo} alt="TechSkims" />
         </div>
-        <nav className="flex overflow-y-scroll flex-col justify-between p-4">
+        <nav className="flex flex-col justify-between p-4">
           <div className="space-y-4">
             <div className="space-y-1">
               {navItems.map((item, index) => (

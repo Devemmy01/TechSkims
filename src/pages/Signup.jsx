@@ -133,7 +133,7 @@ const Signup = () => {
           <CardContent>
             <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">Name of company/organization</Label>
                 <Input
                   id="name"
                   placeholder="Enter your name"

@@ -64,8 +64,10 @@ export default function Requestss() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [imagePreview, setImagePreview] = useState([]);
+  const [services, setServices] = useState([]);
 
   const [formData, setFormData] = useState({
+    serviceId: "",
     technicianTitle: "",
     location: "",
     contactNo: "",
@@ -76,8 +78,7 @@ export default function Requestss() {
     pickupLocation: "",
     payType: "",
     rate: "",
-    images: [],
-    serviceId: "1"
+    images: []
   });
 
   const validateForm = () => {
@@ -245,7 +246,16 @@ export default function Requestss() {
         return;
       }
 
-      const response = await axios.get(`${BASE_URL}/client/requests`); // No need to set headers here as interceptor will handle it
+      const response = await axios.get(`${BASE_URL}/client/requests`);
+
+      // Add detailed logging
+      console.log('Full Response:', response);
+      console.log('Response Data:', response.data);
+      console.log('Requests Array:', response.data.data);
+      if (response.data.data && response.data.data.length > 0) {
+        console.log('First Request Object:', response.data.data[0]);
+        console.log('Request Images:', response.data.data[0].request_images);
+      }
 
       if (response.data.data) {
         setRequests(response.data.data);
@@ -272,6 +282,7 @@ export default function Requestss() {
       if (response.data.data) {
         const request = response.data.data;
         setFormData({
+          serviceId: request.serviceId || "",
           technicianTitle: request.technicianTitle || "",
           location: request.location || "",
           contactNo: request.contactNo || "",
@@ -300,40 +311,48 @@ export default function Requestss() {
   // Update request
   const updateRequest = async (requestId, formData) => {
     try {
-      // Create a new FormData with only non-empty fields
       const data = new FormData();
-      Object.keys(formData).forEach(key => {
-        // Skip empty fields and images if no new images
-        if (key === 'images') {
-          if (formData.images.length > 0) {
-            formData.images.forEach(image => {
-              data.append('images[]', image);
-            });
-          }
-        } else if (formData[key]) { // Only append non-empty values
-          data.append(key, formData[key]);
-        }
-      });
+      
+      // Explicitly set each field
+      data.append('serviceId', formData.serviceId);
+      data.append('technicianTitle', formData.technicianTitle);
+      data.append('location', formData.location);
+      data.append('contactNo', formData.contactNo);
+      data.append('startDate', formData.startDate);
+      data.append('startTime', formData.startTime);
+      data.append('description', formData.description);
+      data.append('specialTools', formData.specialTools);
+      data.append('pickupLocation', formData.pickupLocation);
+      data.append('payType', formData.payType);
+      data.append('rate', formData.rate);
+
+      // Handle images separately
+      if (formData.images && formData.images.length > 0) {
+        formData.images.forEach(image => {
+          data.append('images[]', image);
+        });
+      }
 
       // Add _method field for Laravel to handle PUT request
       data.append('_method', 'PUT');
 
-      // Make the request as POST but with _method=PUT for proper file upload
       const response = await axios.post(`${BASE_URL}/client/requests/${requestId}`, data, {
         headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
       });
 
       if (response.data.status === 'success') {
         toast.success('Request updated successfully');
-        fetchRequests(); // Refresh the list
+        fetchRequests();
         resetForm();
       }
     } catch (error) {
       console.error('Error updating request:', error);
+      console.error('Error response:', error.response?.data);
       if (error.response?.data?.error_message) {
-        // Show specific validation errors
         const errorMessages = Object.values(error.response.data.error_message)
           .flat()
           .join(', ');
@@ -344,12 +363,52 @@ export default function Requestss() {
     }
   };
 
+  // Add function to fetch services
+  const fetchServices = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${BASE_URL}/services`, {
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.data.status === 'success') {
+        setServices(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching services:', error);
+      if (error.response?.status === 401) {
+        handleAuthError();
+      } else {
+      toast.error('Failed to load services');
+      }
+    }
+  };
+
+  // Update useEffect to use the existing auth check logic
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const userRole = localStorage.getItem('userRole');
+
+    if (!token || !userRole || userRole !== 'client') {
+      handleAuthError();
+      return;
+    }
+
+    // Fetch initial data
+      fetchRequests();
+      fetchServices();
+  }, []);
+
   useEffect(() => {
     fetchRequests();
   }, []);
 
   const resetForm = () => {
     setFormData({
+      serviceId: "",
       technicianTitle: "",
       location: "",
       contactNo: "",
@@ -360,8 +419,7 @@ export default function Requestss() {
       pickupLocation: "",
       payType: "",
       rate: "",
-      images: [],
-      serviceId: "1"
+      images: []
     });
     setIsEditing(false);
     setCurrentRequestId(null);
@@ -380,33 +438,55 @@ export default function Requestss() {
 
     try {
       const data = new FormData();
-      Object.keys(formData).forEach(key => {
-        if (key === 'images') {
-          formData.images.forEach(image => {
-            data.append('images[]', image);
-          });
-        } else {
-          data.append(key, formData[key]);
-        }
-      });
+      
+      // Log the client name specifically
+      console.log('Client name being sent:', formData.technicianTitle);
+      
+      // Explicitly set the client name first
+      data.append('technicianTitle', formData.technicianTitle);
+      
+      // Rest of the fields
+      data.append('serviceId', formData.serviceId);
+      data.append('location', formData.location);
+      data.append('contactNo', formData.contactNo);
+      data.append('startDate', formData.startDate);
+      data.append('startTime', formData.startTime);
+      data.append('description', formData.description);
+      data.append('specialTools', formData.specialTools);
+      data.append('pickupLocation', formData.pickupLocation);
+      data.append('payType', formData.payType);
+      data.append('rate', formData.rate);
 
-      if (isEditing && currentRequestId) {
-        await updateRequest(currentRequestId, formData);
-      } else {
+      // Handle images separately
+      if (formData.images && formData.images.length > 0) {
+        formData.images.forEach(image => {
+          data.append('images[]', image);
+        });
+      }
+
+      // Double check the client name in FormData
+      console.log('Client name in FormData:', data.get('technicianTitle'));
+
         const response = await axios.post(`${BASE_URL}/client/requests`, data, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
+            'Accept': 'application/json',
+            'Content-Type': 'multipart/form-data'
           }
         });
+
+      // Log the full response for debugging
+      console.log('Full API Response:', response);
+      console.log('Response Data:', response.data);
+      console.log('Returned Client Name:', response.data.data.technicianTitle);
 
         if (response.data.status === 'success') {
           toast.success('Request submitted successfully');
           resetForm();
           fetchRequests();
-        }
       }
     } catch (error) {
       console.error('Full error:', error);
+      console.error('Error response:', error.response?.data);
       if (error.response?.status === 401) {
         toast.error('Your session has expired. Please login again.');
         window.location.href = '/login';
@@ -445,7 +525,7 @@ export default function Requestss() {
         <div ref={formRef} className="bg-transparent md:bg-white mt-5 rounded-lg md:px-10 lg:px-32 py-10">
           <form onSubmit={handleSubmit}>
             <div className="grid md:grid-cols-2 gap-7">
-              <div className="flex flex-col gap-2 w-full">
+            <div className="flex flex-col gap-2 w-full">
                 <label className="text-[#606060] font-[600] text-sm">
                   Technician Title <span className="text-red-500">*</span>
                 </label>
@@ -460,20 +540,25 @@ export default function Requestss() {
                   <span className="text-red-500 text-sm">{errors.technicianTitle}</span>
                 )}
               </div>
-
               <div className="flex flex-col gap-2 w-full">
                 <label className="text-[#606060] font-[600] text-sm">
-                  Project Location <span className="text-red-500">*</span>
+                  Service Type <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  name="location"
-                  value={formData.location}
+                <select
+                  name="serviceId"
+                  value={formData.serviceId}
                   onChange={handleInputChange}
-                  className={`border ${errors.location ? 'border-red-500' : 'border-[#E5E5E5]'} bg-[#F5F6FA] text-[#636262] rounded-md p-2 w-full h-[52px] outline-none`}
-                />
-                {errors.location && (
-                  <span className="text-red-500 text-sm">{errors.location}</span>
+                  className={`border ${errors.serviceId ? 'border-red-500' : 'border-[#E5E5E5]'} bg-[#F5F6FA] text-[#636262] rounded-md p-2 w-full h-[52px] outline-none`}
+                >
+                  <option value="">Select a service</option>
+                  {services.map(service => (
+                    <option key={service.id} value={service.id}>
+                      {service.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.serviceId && (
+                  <span className="text-red-500 text-sm">{errors.serviceId}</span>
                 )}
               </div>
 
@@ -495,6 +580,26 @@ export default function Requestss() {
                   <span className="text-gray-400 text-xs">Enter phone number with country code (e.g., +1234567890)</span>
                 )}
               </div>
+
+              
+
+              <div className="flex flex-col gap-2 w-full">
+                <label className="text-[#606060] font-[600] text-sm">
+                  Project Location <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleInputChange}
+                  className={`border ${errors.location ? 'border-red-500' : 'border-[#E5E5E5]'} bg-[#F5F6FA] text-[#636262] rounded-md p-2 w-full h-[52px] outline-none`}
+                />
+                {errors.location && (
+                  <span className="text-red-500 text-sm">{errors.location}</span>
+                )}
+              </div>
+
+              
 
               <div className="flex flex-col gap-2 w-full">
                 <label className="text-[#606060] font-[600] text-sm">
@@ -673,7 +778,7 @@ export default function Requestss() {
         </div>
 
         {/* Requests List */}
-        <div className="mt-12" id="requests">
+        {/* <div className="mt-12" id="requests">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">Your Requests</h2>
           <div className="grid gap-4">
             {requests.map((request) => (
@@ -684,19 +789,25 @@ export default function Requestss() {
               >
                 <div className="flex justify-between items-start mb-4">
                   <div>
+                    <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-lg text-gray-900">
-                      {request.technicianTitle}
+                        {request.technicianTitle}
                     </h3>
+                      <span className="text-sm text-gray-500">|</span>
+                      <span className="text-sm text-gray-500">{request.service}</span>
+                    </div>
+                    <h4 className="text-gray-700 mt-1">{request.technicianTitle}</h4>
                     <p className="text-gray-500 text-sm mt-1">
                       {request.description.substring(0, 100)}...
                     </p>
                   </div>
-                  <span className={`px-4 py-2 rounded-md text-base font-medium ${
-                    request.status === 'pending' ? 'bg-[#FFA756] bg-opacity-20 text-[#FFA756]' :
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    !request.status ? 'bg-yellow-100 text-yellow-800' :
                     request.status === 'completed' ? 'bg-green-100 text-green-800' :
+                    request.status === 'rejected' ? 'bg-red-100 text-red-800' :
                     'bg-gray-100 text-gray-800'
                   }`}>
-                    {request.status}
+                    {request.status || 'Pending'}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
@@ -725,7 +836,7 @@ export default function Requestss() {
               </div>
             )}
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

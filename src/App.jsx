@@ -53,7 +53,7 @@ const ProtectedRoute = ({ children }) => {
 
 const App = () => {
   const location = useLocation();
-  const hideFooterPaths = ['/signup', '/verify-email', '/login', '/admin/dashboard', '/admin/projects', '/admin/requests', '/client-dashboard', '/technician-dashboard', '/client-dashboard/requests', 'client-dashboard/projects', '/client-dashboard/reports'];
+  const hideFooterPaths = ['/signup', '/verify-email', '/login', '/admin/dashboard', '/admin/projects', '/admin/requests', '/client-dashboard', '/technician-dashboard', '/client-dashboard/requests', 'client-dashboard/projects', '/client-dashboard/reports', '/client-dashboard/projects'];
   const hideLayoutPaths = ['/admin/dashboard', '/admin/projects', '/admin/requests', '/client-dashboard', '/technician-dashboard', '/client-dashboard/requests', '/client-dashboard/projects', '/client-dashboard/reports'];
 
   useEffect(() => {

@@ -17,6 +17,7 @@ import { toast } from "react-toastify";
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useNavigate } from 'react-router-dom';
+import logo from '@/assets/techskims3.png';
 
 const BASE_URL = 'https://beta.techskims.tech/api';
 
@@ -30,6 +31,8 @@ export default function Requests() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editFormData, setEditFormData] = useState({
+    client: "",
+    service: "",
     technicianTitle: "",
     location: "",
     contactNo: "",
@@ -40,10 +43,14 @@ export default function Requests() {
     pickupLocation: "",
     payType: "",
     rate: "",
-    request_images: [],
+    images: [],
   });
 
   const itemsPerPage = 7;
+
+  // Add new state for success modal
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [updatedRequest, setUpdatedRequest] = useState(null);
 
   // Check authentication
   const checkAuth = () => {
@@ -130,15 +137,37 @@ export default function Requests() {
     try {
       const token = localStorage.getItem('token');
       
-      // Format the data before sending
-      const formattedData = {
-        ...editFormData,
-        startTime: formatTimeToHi(editFormData.startTime)
-      };
+      const formattedTime = editFormData.startTime ? formatTimeToHi(editFormData.startTime) : '';
+      
+      const data = new FormData();
+      
+      if (editFormData.startDate) {
+        data.append('startDate', editFormData.startDate);
+      }
+      if (editFormData.endDate) {
+        data.append('endDate', editFormData.endDate);
+      }
+      if (formattedTime) {
+        data.append('startTime', formattedTime);
+      }
+      if (editFormData.specialTools) {
+        data.append('specialTools', editFormData.specialTools);
+      }
+      if (editFormData.adminPayType) {
+        data.append('adminPayType', editFormData.adminPayType);
+      }
+      if (editFormData.adminRate) {
+        data.append('adminRate', editFormData.adminRate);
+      }
+      if (editFormData.deliverables) {
+        data.append('deliverables', editFormData.deliverables);
+      }
+      
+      data.append('_method', 'PUT');
 
-      const response = await axios.put(
+      const response = await axios.post(
         `${BASE_URL}/admin/requests/${selectedRequest.id}`,
-        formattedData,
+        data,
         {
           headers: {
             'Accept': 'application/json',
@@ -150,65 +179,157 @@ export default function Requests() {
       if (response.data.status === 'success') {
         toast.success('Request updated successfully');
         setShowEditModal(false);
+        setUpdatedRequest(response.data.data);
+        setShowSuccessModal(true);
         fetchRequests();
       }
     } catch (error) {
       console.error('Error updating request:', error);
+      console.error('Error response:', error.response?.data);
+      
       if (error.response?.status === 401) {
         toast.error('Session expired. Please login again.');
         localStorage.removeItem('token');
         localStorage.removeItem('userRole');
         navigate('/login');
-      } else if (error.response?.data?.error_message) {
-        // Show specific validation errors
-        const errorMessages = Object.values(error.response.data.error_message)
-          .flat()
-          .join(', ');
-        toast.error(errorMessages);
       } else if (error.response?.data?.message) {
         toast.error(error.response.data.message);
       } else {
-        toast.error('Failed to update request');
+        toast.error('Failed to update request. Please check all fields are filled correctly.');
       }
     }
   };
 
   // Generate PDF
   const generatePDF = (request) => {
+    // Debug logging
+    console.log('Generating PDF for request:', request);
+    console.log('Deliverables:', request.deliverables);
+    console.log('Images:', request.request_images || request.images);
+
     const doc = new jsPDF();
     
-    // Add title
+    // Add TechSkims logo using the imported image
+    doc.addImage(
+      logo, // Using the imported logo
+      'PNG',
+      10, // x position
+      10, // y position
+      50, // width
+      35  // height
+    );
+    
+    // Add title with adjusted position to accommodate logo
     doc.setFontSize(20);
-    doc.text('Request Details', 20, 20);
+    doc.text('Request Details', 105, 30, { align: 'center' });
+    
+    let yPos = 40; // Adjusted starting position for content
     
     // Add request information
     doc.setFontSize(12);
-    const data = [
-      ['Technician Title', request.technicianTitle],
-      ['Location', request.location],
-      ['Contact Number', request.contactNo],
-      ['Start Date', request.startDate],
-      ['Start Time', request.startTime],
-      ['Description', request.description],
-      ['Special Tools', request.specialTools],
-      ['Pickup Location', request.pickupLocation],
-      ['Pay Type', request.payType],
-      ['Rate', request.rate],
-      ['Status', request.status]
-    ];
+    
+    // Section headers style
+    const sectionHeaderStyle = {
+      fillColor: [41, 128, 185],
+      textColor: 255,
+      fontStyle: 'bold',
+      fontSize: 12
+    };
 
+    // Regular row style
+    const regularStyle = {
+      fontSize: 10,
+      cellPadding: 4,
+      cellWidth: 'wrap',
+      lineWidth: 0.1,
+      lineColor: [80, 80, 80]
+    };
+
+    // Client Information Section
     doc.autoTable({
-      startY: 30,
-      head: [['Field', 'Value']],
-      body: data,
+      startY: yPos,
+      head: [[{ content: 'Client Information', colSpan: 2, styles: sectionHeaderStyle }]],
+      body: [
+        ['Client', request.client || ''],
+        ['Service', request.service || ''],
+        ['Technician Title', request.technicianTitle || ''],
+        ['Location', request.location || ''],
+        ['Contact No', request.contactNo || ''],
+        ['Pay Type', request.payType || ''],
+        ['Rate', request.rate || ''],
+        ['Pickup Location', request.pickupLocation || ''],
+        ['Description', request.description || '']
+      ],
       theme: 'grid',
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [0, 168, 232] },
+      styles: regularStyle,
       columnStyles: {
-        0: { cellWidth: 50 },
-        1: { cellWidth: 100 }
-      }
+        0: { fontStyle: 'bold', cellWidth: 60 },
+        1: { cellWidth: 130 }
+      },
+      margin: { left: 10 }
     });
+
+    yPos = doc.lastAutoTable.finalY + 10;
+
+    // Add images section if there are images
+    const images = request.request_images || request.images || [];
+    if (images && images.length > 0) {
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text('Request Images', 10, yPos);
+      
+      yPos += 10;
+      
+      // Add a note about images
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text(
+        'Note: Images can be viewed in the online system at beta.techskims.tech', 
+        10, 
+        yPos
+      );
+      
+      yPos += 10;
+
+      // Add image URLs as text instead of trying to embed them
+      images.forEach((image, index) => {
+        const imageUrl = image.image || image.url || image;
+        doc.setFontSize(8);
+        doc.text(`Image ${index + 1}: ${imageUrl}`, 10, yPos);
+        yPos += 5;
+      });
+      
+      yPos += 10; // Add some spacing before next section
+    }
+
+    // Admin Settings Section
+    doc.autoTable({
+      startY: yPos,
+      head: [[{ content: 'Admin Settings', colSpan: 2, styles: sectionHeaderStyle }]],
+      body: [
+        ['Start Date', request.startDate || ''],
+        ['End Date', request.endDate || ''],
+        ['Start Time', request.startTime || ''],
+        ['Special Tools', request.specialTools || ''],
+        ['Admin Pay Type', request.adminPayType || request.payType || ''],
+        ['Admin Rate', request.adminRate || request.rate || ''],
+        ['Deliverables', request.deliverables || '']
+      ],
+      theme: 'grid',
+      styles: regularStyle,
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 60 },
+        1: { cellWidth: 130 }
+      },
+      margin: { left: 10 }
+    });
+
+    // Add footer with date
+    const date = new Date().toLocaleDateString();
+    doc.setFontSize(10);
+    doc.setTextColor(128);
+    doc.text(`Generated on: ${date}`, 10, doc.internal.pageSize.height - 10);
+    doc.text(`Request ID: ${request.id}`, doc.internal.pageSize.width - 10, doc.internal.pageSize.height - 10, { align: 'right' });
 
     // Save the PDF
     doc.save(`request-${request.id}.pdf`);
@@ -275,95 +396,62 @@ export default function Requests() {
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto border shadow-sm rounded-[8px] bg-white">
               <table className="w-full min-w-[800px] table-auto">
                 <thead>
-                  <tr className="border-b text-left text-sm text-gray-500">
-                    <th className="pb-3 font-medium">Id</th>
-                    <th className="pb-3 font-medium">Client Name</th>
-                    <th className="pb-3 font-medium">Location</th>
-                    <th className="pb-3 font-medium">Images</th>
-                    <th className="pb-3 font-medium">Start Date</th>
-                    <th className="pb-3 font-medium">Status</th>
-                    <th className="pb-3 font-medium">Actions</th>
+                  <tr className="border-b text-sm text-gray-600 bg-gray-50">
+                    <th className="px-6 py-4 font-medium text-left w-16">ID</th>
+                    <th className="px-6 py-4 font-medium text-left">Technician Title</th>
+                    <th className="px-6 py-4 font-medium text-left">Service</th>
+                    <th className="px-6 py-4 font-medium text-left w-32">Contact</th>
+                    <th className="px-6 py-4 font-medium text-left w-48">Schedule</th>
+                    <th className="px-6 py-4 font-medium text-center w-28">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {currentRequests.map((request) => (
-                    <tr key={request.id} className="border-b text-sm">
-                      <td className="py-4">{request.id}</td>
-                      <td className="py-4">{request.technicianTitle}</td>
-                      <td className="py-4">{request.location}</td>
-                      <td className="py-4">
-                        <div className="flex -space-x-2">
-                          {request.request_images?.map((image, index) => (
-                            <img
-                              key={index}
-                              src={`https://beta.techskims.tech/storage/${image.image}`}
-                              alt={`Request ${request.id} image ${index + 1}`}
-                              className="h-8 w-8 rounded-full border-2 border-white object-cover"
-                            />
-                          ))}
-                          {request.request_images?.length > 3 && (
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-gray-100 text-xs">
-                              +{request.request_images.length - 3}
-                            </div>
-                          )}
-                          {(!request.request_images || request.request_images.length === 0) && (
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100">
-                              <Image className="h-4 w-4 text-gray-400" />
-                            </div>
-                          )}
+                    <tr key={request.id} className="border-b text-sm hover:bg-gray-50">
+                      <td className="px-6 py-4 text-left">{request.id}</td>
+                      <td className="px-6 py-4 text-left font-medium text-gray-900">{request.technicianTitle}</td>
+                      <td className="px-6 py-4 text-left">{request.service}</td>
+                      <td className="px-6 py-4 text-left">{request.contactNo}</td>
+                      <td className="px-6 py-4 text-left">
+                        <div>
+                          <div className="text-gray-900">{request.startDate}</div>
+                          <div className="text-gray-500 text-xs">{request.startTime}</div>
                         </div>
                       </td>
-                      <td className="py-4">{request.startDate}</td>
-                      <td className="py-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          request.status === 'completed' ? 'bg-green-100 text-green-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {request.status}
-                        </span>
-                      </td>
-                      <td className="py-4">
-                        <div className="flex gap-2">
-                          <button 
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-center gap-2">
+                          {/* <button 
                             onClick={() => {
                               setSelectedRequest(request);
                               setShowViewModal(true);
                             }}
-                            className="rounded-full p-1 text-blue-500 hover:bg-blue-50"
+                            className="rounded-full p-2 text-blue-500 hover:bg-blue-50"
                             title="View Details"
                           >
                             <Eye className="h-4 w-4" />
-                          </button>
+                          </button> */}
                           <button 
                             onClick={() => {
                               setSelectedRequest(request);
                               setEditFormData({
-                                technicianTitle: request.technicianTitle,
-                                location: request.location,
-                                contactNo: request.contactNo,
-                                startDate: request.startDate,
-                                startTime: request.startTime,
-                                description: request.description,
-                                specialTools: request.specialTools,
-                                pickupLocation: request.pickupLocation,
-                                payType: request.payType,
-                                rate: request.rate,
-                                request_images: request.request_images,
+                                ...request,  // Spread all request properties
+                                adminPayType: request.adminPayType || request.payType,
+                                adminRate: request.adminRate || request.rate,
+                                deliverables: request.deliverables || '',
                               });
                               setShowEditModal(true);
                             }}
-                            className="rounded-full p-1 text-green-500 hover:bg-green-50"
-                            title="Edit Request"
+                    className="w-full inline-flex justify-center items-center px-4 py-2 text-[#00A8E8] rounded-md focus:outline-none"
+                            
                           >
                             <EditIcon className="h-4 w-4" />
                           </button>
                           <button 
                             onClick={() => generatePDF(request)}
-                            className="rounded-full p-1 text-gray-500 hover:bg-gray-50"
+                            className="rounded-full p-2 text-gray-500 hover:bg-gray-50"
                             title="Download PDF"
                           >
                             <Download className="h-4 w-4" />
@@ -410,19 +498,26 @@ export default function Requests() {
                 <div className="mb-6">
                   <label className="text-base font-medium text-[#606060] block mb-2">Request Images</label>
                   <div className="grid grid-cols-3 gap-4">
-                    {selectedRequest.request_images?.map((image, index) => (
-                      <div key={index} className="relative aspect-square">
-                        <img
-                          src={`https://beta.techskims.tech/storage/${image.image}`}
-                          alt={`Request image ${index + 1}`}
-                          className="rounded-lg object-cover w-full h-full"
-                        />
-                      </div>
-                    ))}
-                    {(!selectedRequest.request_images || selectedRequest.request_images.length === 0) && (
+                    {selectedRequest.images && selectedRequest.images.length > 0 ? (
+                      selectedRequest.images.map((image, index) => (
+                        <div key={index} className="relative aspect-square">
+                          <img
+                            src={image.image}
+                            alt={`Request image ${index + 1}`}
+                            className="rounded-lg object-cover w-full h-full"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = 'https://via.placeholder.com/200?text=Error';
+                            }}
+                          />
+                        </div>
+                      ))
+                    ) : (
                       <div className="flex items-center justify-center aspect-square bg-gray-100 rounded-lg">
-                        <Image className="h-8 w-8 text-gray-400" />
-                        <p className="text-sm text-gray-500 mt-2">No images</p>
+                        <div className="text-center">
+                          <Image className="h-8 w-8 text-gray-400 mx-auto" />
+                          <p className="text-sm text-gray-500 mt-2">No images</p>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -486,147 +581,266 @@ export default function Requests() {
               <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
                 <h2 className="text-xl font-semibold mb-4">Edit Request</h2>
                 <form onSubmit={handleUpdateRequest} className="grid gap-4">
-                  {/* Add Images Section if editing is allowed */}
-                  <div>
-                    <label className="text-base font-medium text-[#606060] block mb-2">Current Images</label>
-                    <div className="grid grid-cols-4 gap-4 mb-4">
-                      {editFormData.request_images?.map((image, index) => (
-                        <div key={index} className="relative aspect-square">
-                          <img
-                            src={`https://beta.techskims.tech/storage/${image.image}`}
-                            alt={`Request image ${index + 1}`}
-                            className="rounded-lg object-cover w-full h-full"
+                  {/* Client Information Section - Read Only */}
+                  <div className="border-b pb-4">
+                    <h3 className="text-md font-medium text-gray-700 mb-3">Client Information</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm text-gray-500">Client Name</label>
+                        <input
+                          type="text"
+                          value={selectedRequest.client || 'N/A'}
+                          readOnly
+                          className="w-full mt-1 rounded-md border border-gray-200 bg-gray-50 p-2 text-gray-600"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-500">Service</label>
+                        <input
+                          type="text"
+                          value={selectedRequest.service}
+                          readOnly
+                          className="w-full mt-1 rounded-md border border-gray-200 bg-gray-50 p-2 text-gray-600"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-500">Technician Title</label>
+                        <input
+                          type="text"
+                          value={selectedRequest.technicianTitle}
+                          readOnly
+                          className="w-full mt-1 rounded-md border border-gray-200 bg-gray-50 p-2 text-gray-600"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-500">Location</label>
+                        <input
+                          type="text"
+                          value={selectedRequest.location}
+                          readOnly
+                          className="w-full mt-1 rounded-md border border-gray-200 bg-gray-50 p-2 text-gray-600"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-500">Contact Number</label>
+                        <input
+                          type="text"
+                          value={selectedRequest.contactNo}
+                          readOnly
+                          className="w-full mt-1 rounded-md border border-gray-200 bg-gray-50 p-2 text-gray-600"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-500">Client Pay Type</label>
+                        <input
+                          type="text"
+                          value={selectedRequest.payType}
+                          readOnly
+                          className="w-full mt-1 rounded-md border border-gray-200 bg-gray-50 p-2 text-gray-600"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-500">Client Rate</label>
+                        <input
+                          type="text"
+                          value={selectedRequest.rate}
+                          readOnly
+                          className="w-full mt-1 rounded-md border border-gray-200 bg-gray-50 p-2 text-gray-600"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-500">Pickup Location</label>
+                        <input
+                          type="text"
+                          value={selectedRequest.pickupLocation}
+                          readOnly
+                          className="w-full mt-1 rounded-md border border-gray-200 bg-gray-50 p-2 text-gray-600"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <label className="text-sm text-gray-500">Description</label>
+                      <textarea
+                        value={selectedRequest.description}
+                        readOnly
+                        rows="2"
+                        className="w-full mt-1 rounded-md border border-gray-200 bg-gray-50 p-2 text-gray-600"
+                      />
+                    </div>
+                    
+                    {/* Add Images Section */}
+                    <div className="mt-4">
+                      <label className="text-sm text-gray-500">Request Images</label>
+                      <div className="mt-2 grid grid-cols-3 gap-4">
+                        {selectedRequest.images && selectedRequest.images.length > 0 ? (
+                          selectedRequest.images.map((image, index) => (
+                            <div key={index} className="relative aspect-square">
+                              <img
+                                src={image.image}
+                                alt={`Request image ${index + 1}`}
+                                className="rounded-lg object-cover w-full h-full"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = 'https://via.placeholder.com/200?text=Error';
+                                }}
+                              />
+                            </div>
+                          ))
+                        ) : (
+                          <div className="flex items-center justify-center aspect-square bg-gray-100 rounded-lg">
+                            <div className="text-center">
+                              <Image className="h-8 w-8 text-gray-400 mx-auto" />
+                              <p className="text-sm text-gray-500 mt-2">No images</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Admin Editable Section */}
+                  <div className="pt-4">
+                    <h3 className="text-md font-medium text-gray-700 mb-3">Admin Settings</h3>
+                    <div className="grid gap-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm text-gray-500">Start Date</label>
+                          <input
+                            type="date"
+                            value={editFormData.startDate}
+                            onChange={(e) => setEditFormData({...editFormData, startDate: e.target.value})}
+                            className="w-full mt-1 rounded-md border border-gray-200 p-2"
                           />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newImages = [...editFormData.request_images];
-                              newImages.splice(index, 1);
-                              setEditFormData({...editFormData, request_images: newImages});
-                            }}
-                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
                         </div>
-                      ))}
+                        <div>
+                          <label className="text-sm text-gray-500">End Date</label>
+                          <input
+                            type="date"
+                            value={editFormData.endDate}
+                            onChange={(e) => setEditFormData({...editFormData, endDate: e.target.value})}
+                            className="w-full mt-1 rounded-md border border-gray-200 p-2"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-sm text-gray-500">Start Time</label>
+                        <input
+                          type="time"
+                          value={editFormData.startTime}
+                          onChange={(e) => setEditFormData({...editFormData, startTime: e.target.value})}
+                          className="w-full mt-1 rounded-md border border-gray-200 p-2"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm text-gray-500">Special Tools</label>
+                        <textarea
+                          value={editFormData.specialTools}
+                          onChange={(e) => setEditFormData({...editFormData, specialTools: e.target.value})}
+                          className="w-full mt-1 rounded-md border border-gray-200 p-2"
+                          rows="2"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm text-gray-500">Admin Pay Type</label>
+                          <select
+                            value={editFormData.adminPayType}
+                            onChange={(e) => setEditFormData({...editFormData, adminPayType: e.target.value})}
+                            className="w-full mt-1 rounded-md border border-gray-200 p-2"
+                          >
+                            <option value="">Select pay type</option>
+                            <option value="flat">Flat</option>
+                            <option value="hourly">Hourly</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-sm text-gray-500">Admin Rate</label>
+                          <input
+                            type="number"
+                            value={editFormData.adminRate}
+                            onChange={(e) => setEditFormData({...editFormData, adminRate: e.target.value})}
+                            className="w-full mt-1 rounded-md border border-gray-200 p-2"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-sm text-gray-500">Deliverables</label>
+                        <textarea
+                          value={editFormData.deliverables}
+                          onChange={(e) => setEditFormData({...editFormData, deliverables: e.target.value})}
+                          className="w-full mt-1 rounded-md border border-gray-200 p-2"
+                          rows="3"
+                          placeholder="Enter deliverables for this request"
+                        />
+                      </div>
                     </div>
                   </div>
-                  
-                  <div>
-                    <label className="text-sm text-gray-500">Technician Title</label>
-                    <input
-                      type="text"
-                      value={editFormData.technicianTitle}
-                      onChange={(e) => setEditFormData({...editFormData, technicianTitle: e.target.value})}
-                      className="w-full mt-1 rounded-md border border-gray-200 p-2"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-500">Location</label>
-                    <input
-                      type="text"
-                      value={editFormData.location}
-                      onChange={(e) => setEditFormData({...editFormData, location: e.target.value})}
-                      className="w-full mt-1 rounded-md border border-gray-200 p-2"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-500">Contact Number</label>
-                    <input
-                      type="text"
-                      value={editFormData.contactNo}
-                      onChange={(e) => setEditFormData({...editFormData, contactNo: e.target.value})}
-                      className="w-full mt-1 rounded-md border border-gray-200 p-2"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm text-gray-500">Start Date</label>
-                      <input
-                        type="date"
-                        value={editFormData.startDate}
-                        onChange={(e) => setEditFormData({...editFormData, startDate: e.target.value})}
-                        className="w-full mt-1 rounded-md border border-gray-200 p-2"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm text-gray-500">Start Time (24-hour format)</label>
-                      <input
-                        type="time"
-                        value={editFormData.startTime}
-                        onChange={(e) => setEditFormData({...editFormData, startTime: e.target.value})}
-                        className="w-full mt-1 rounded-md border border-gray-200 p-2"
-                        step="60"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-500">Description</label>
-                    <textarea
-                      value={editFormData.description}
-                      onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
-                      className="w-full mt-1 rounded-md border border-gray-200 p-2"
-                      rows="3"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-500">Special Tools</label>
-                    <textarea
-                      value={editFormData.specialTools}
-                      onChange={(e) => setEditFormData({...editFormData, specialTools: e.target.value})}
-                      className="w-full mt-1 rounded-md border border-gray-200 p-2"
-                      rows="2"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-500">Pickup Location</label>
-                    <input
-                      type="text"
-                      value={editFormData.pickupLocation}
-                      onChange={(e) => setEditFormData({...editFormData, pickupLocation: e.target.value})}
-                      className="w-full mt-1 rounded-md border border-gray-200 p-2"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm text-gray-500">Pay Type</label>
-                      <select
-                        value={editFormData.payType}
-                        onChange={(e) => setEditFormData({...editFormData, payType: e.target.value})}
-                        className="w-full mt-1 rounded-md border border-gray-200 p-2"
-                      >
-                        <option value="">Select pay type</option>
-                        <option value="flat">Flat</option>
-                        <option value="hourly">Hourly</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-sm text-gray-500">Rate</label>
-                      <input
-                        type="number"
-                        value={editFormData.rate}
-                        onChange={(e) => setEditFormData({...editFormData, rate: e.target.value})}
-                        className="w-full mt-1 rounded-md border border-gray-200 p-2"
-                      />
-                    </div>
-                  </div>
+
                   <div className="mt-6 flex justify-end gap-3">
                     <button
                       type="button"
                       onClick={() => setShowEditModal(false)}
-                      className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                      className="px-4 py-2 bg-transparent border border-gray-200 text-gray-700 rounded-md hover:bg-gray-200"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                      className="px-4 py-2 bg-[#00A8E8] text-white rounded-md hover:bg-[#00a6e8d8]"
                     >
                       Save Changes
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          )}
+
+          {showSuccessModal && updatedRequest && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-lg max-w-md w-full p-6">
+                <div className="text-center mb-6">
+                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                    <Check className="h-6 w-6 text-green-600" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Request Updated Successfully</h3>
+                  <p className="text-sm text-gray-500">
+                    The request has been updated. Would you like to download the request details as PDF?
+                  </p>
+                </div>
+                
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => {
+                      // Merge the original request with updated data to ensure we have all fields
+                      const completeRequest = {
+                        ...selectedRequest,
+                        ...updatedRequest,
+                        // Ensure admin fields are properly set
+                        adminPayType: updatedRequest.adminPayType || updatedRequest.payType,
+                        adminRate: updatedRequest.adminRate || updatedRequest.rate,
+                        deliverables: updatedRequest.deliverables || ''
+                      };
+                      generatePDF(completeRequest);
+                      setShowSuccessModal(false);
+                    }}
+                    className="w-full inline-flex justify-center items-center px-4 py-2 bg-[#00A8E8] text-white rounded-md hover:bg-[#00a6e8d8] focus:outline-none"
+                  >
+                    <Download className="h-5 w-5 mr-2" />
+                    Download PDF
+                  </button>
+                  
+                  <button
+                    onClick={() => setShowSuccessModal(false)}
+                    className="w-full inline-flex justify-center items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
             </div>
           )}
