@@ -44,7 +44,7 @@ const Login = () => {
       const loginAxios = axios.create();
       
       const response = await loginAxios.post(
-        "https://beta.techskims.tech/api/login",
+        "https://api.techskims.com/api/login",
         formData,
         {
           headers: {

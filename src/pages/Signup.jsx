@@ -70,7 +70,7 @@ const Signup = () => {
     try {
       setIsLoading(true);
       const response = await axios.post(
-        "https://beta.techskims.tech/api/register",
+        "https://api.techskims.com/api/register",
         {
           ...formData,
           role,
@@ -83,7 +83,7 @@ const Signup = () => {
         toast.info("Email already exists but hasn't been verified. A new verification code has been sent to your email.");
   
         // Resend the verification code
-        await axios.post('https://beta.techskims.tech/api/email/resend', {
+        await axios.post('https://api.techskims.com/api/email/resend', {
           email: formData.email
         }, {
           headers: {
@@ -183,7 +183,7 @@ const Signup = () => {
                 <button
                   type="button"
                   onClick={togglePasswordVisibility}
-                  className="absolute inset-y-0 right-0 -top-3 font-semibold pr-3 flex items-center text-sm leading-5"
+                  className="absolute inset-y-0 right-0 top-3 font-semibold pr-3 flex items-center text-sm leading-5"
                 >
                   {passwordVisible ? "Hide" : "Show"}
                 </button>
@@ -201,7 +201,7 @@ const Signup = () => {
                 <button
                   type="button"
                   onClick={toggleCPasswordVisibility}
-                  className="absolute inset-y-0 right-0 -top-3 font-semibold pr-3 flex items-center text-sm leading-5"
+                  className="absolute inset-y-0 right-0 -top-1 font-semibold pr-3 flex items-center text-sm leading-5"
                 >
                   {cPasswordVisible ? "Hide" : "Show"}
                 </button>

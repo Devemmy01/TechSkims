@@ -67,7 +67,7 @@ export default function EmailVerification() {
 
     const token = localStorage.getItem('authToken');
 
-    axios.post('https://beta.techskims.tech/api/email/resend', {}, {
+    axios.post('https://api.techskims.com/api/email/resend', {}, {
       headers: {
         'Accept': 'application/json',
         'Authorization': `Bearer ${token}`,
@@ -93,7 +93,7 @@ export default function EmailVerification() {
     const formData = new FormData();
     formData.append('confirmation_code', verificationCode);
   
-    axios.post('https://beta.techskims.tech/api/verify-code', formData, {
+    axios.post('https://api.techskims.com/api/verify-code', formData, {
       headers: {
         'Accept': 'application/json',
         'Authorization': `Bearer ${token}`,

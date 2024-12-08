@@ -15,24 +15,47 @@ import {
   DollarSign
 } from "lucide-react";
 
-const BASE_URL = 'https://beta.techskims.tech/api';
+const BASE_URL = 'https://api.techskims.com/api';
 
 // Define handleAuthError before using it in interceptors
 const handleAuthError = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('userRole');
-  toast.error('Your session has expired. Please login again.');
-  window.location.href = '/login';
+  console.log('handleAuthError called');
+  console.log('Current token:', localStorage.getItem('token'));
+  console.log('Current userRole:', localStorage.getItem('userRole'));
+  
+  // Comment out the localStorage removal and redirect
+  // localStorage.removeItem('token');
+  // localStorage.removeItem('userRole');
+  toast.error('Auth error occurred - debugging mode');
+  // window.location.href = '/login';
 };
 
-// Add axios interceptors
+// Remove the global interceptors and move them inside a function
+const setupAxiosInterceptors = () => {
+  // Remove any existing interceptors first
+  axios.interceptors.request.eject(axios.interceptors.request.handlers[0]);
+  axios.interceptors.response.eject(axios.interceptors.response.handlers[0]);
+
+  // Add request interceptor
 axios.interceptors.request.use(
   (config) => {
+      console.log('Request Config:', config);
+      
+      // Don't intercept login/register requests
+      if (config.url.includes('/login') || config.url.includes('/register')) {
+        return config;
+      }
+
     const token = localStorage.getItem('token');
     const userRole = localStorage.getItem('userRole');
     
+    console.log('Request Interceptor - Token:', token);
+    console.log('Request Interceptor - UserRole:', userRole);
+    console.log('Request URL:', config.url);
+    
     if (!token || !userRole) {
-      handleAuthError();
+      console.log('Interceptor auth check failed');
+        // Don't call handleAuthError here
       return Promise.reject(new Error('No authentication token'));
     }
     
@@ -40,19 +63,24 @@ axios.interceptors.request.use(
     return config;
   },
   (error) => {
+    console.log('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
 
+  // Add response interceptor
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      handleAuthError();
-    }
+    console.log('Response interceptor error:', error);
+    console.log('Response status:', error.response?.status);
+    console.log('Response data:', error.response?.data);
+    
+      // Don't handle auth errors in interceptor
     return Promise.reject(error);
   }
 );
+};
 
 export default function Requestss() {
   const formRef = useRef(null);
@@ -78,7 +106,8 @@ export default function Requestss() {
     pickupLocation: "",
     payType: "",
     rate: "",
-    images: []
+    images: [],
+    deliveryInstructions: ""
   });
 
   const validateForm = () => {
@@ -155,6 +184,10 @@ export default function Requestss() {
       } else if (rateValue < 10) {
         newErrors.rate = 'Minimum rate should be 10';
       }
+    }
+    
+    if (!formData.deliveryInstructions.trim()) {
+      newErrors.deliveryInstructions = 'Delivery instructions are required';
     }
 
     setErrors(newErrors);
@@ -242,28 +275,25 @@ export default function Requestss() {
       const userRole = localStorage.getItem('userRole');
 
       if (!token || !userRole || userRole !== 'client') {
-        handleAuthError();
+        console.log('fetchRequests auth check failed');
+        toast.error('Authentication required for this action');
         return;
       }
 
-      const response = await axios.get(`${BASE_URL}/client/requests`);
+      const response = await axios.get(`${BASE_URL}/client/requests`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
 
-      // Add detailed logging
-      console.log('Full Response:', response);
-      console.log('Response Data:', response.data);
-      console.log('Requests Array:', response.data.data);
-      if (response.data.data && response.data.data.length > 0) {
-        console.log('First Request Object:', response.data.data[0]);
-        console.log('Request Images:', response.data.data[0].request_images);
-      }
-
-      if (response.data.data) {
+      if (response.data.status === 'success') {
         setRequests(response.data.data);
       }
     } catch (error) {
-      console.error('Error fetching requests:', error);
+      console.error('Error in fetchRequests:', error);
       if (error.response?.status === 401) {
-        handleAuthError();
+        toast.error('Authentication failed');
       } else {
         toast.error('Failed to fetch requests');
       }
@@ -282,7 +312,7 @@ export default function Requestss() {
       if (response.data.data) {
         const request = response.data.data;
         setFormData({
-          serviceId: request.serviceId || "",
+          serviceId: request.serviceId || "1",
           technicianTitle: request.technicianTitle || "",
           location: request.location || "",
           contactNo: request.contactNo || "",
@@ -294,12 +324,11 @@ export default function Requestss() {
           payType: request.payType || "",
           rate: request.rate || "",
           images: [],
-          serviceId: "1"
+          deliveryInstructions: request.deliveryInstructions || ""
         });
         setIsEditing(true);
         setCurrentRequestId(requestId);
         
-        // Scroll to form
         formRef.current?.scrollIntoView({ behavior: 'smooth' });
       }
     } catch (error) {
@@ -389,21 +418,22 @@ export default function Requestss() {
 
   // Update useEffect to use the existing auth check logic
   useEffect(() => {
+    setupAxiosInterceptors();
+    
     const token = localStorage.getItem('token');
     const userRole = localStorage.getItem('userRole');
 
+    console.log('Initial mount - Token:', token);
+    console.log('Initial mount - User Role:', userRole);
+
     if (!token || !userRole || userRole !== 'client') {
-      handleAuthError();
+      console.log('Initial auth check failed:', { token, userRole });
+      toast.error('Authentication required');
       return;
     }
 
-    // Fetch initial data
       fetchRequests();
       fetchServices();
-  }, []);
-
-  useEffect(() => {
-    fetchRequests();
   }, []);
 
   const resetForm = () => {
@@ -419,7 +449,8 @@ export default function Requestss() {
       pickupLocation: "",
       payType: "",
       rate: "",
-      images: []
+      images: [],
+      deliveryInstructions: ""
     });
     setIsEditing(false);
     setCurrentRequestId(null);
@@ -437,16 +468,12 @@ export default function Requestss() {
     setLoading(true);
 
     try {
+      // Create FormData object
       const data = new FormData();
       
-      // Log the client name specifically
-      console.log('Client name being sent:', formData.technicianTitle);
-      
-      // Explicitly set the client name first
+      // Add required fields using exact field names from API response
+      data.append('serviceId', formData.serviceId || "1");
       data.append('technicianTitle', formData.technicianTitle);
-      
-      // Rest of the fields
-      data.append('serviceId', formData.serviceId);
       data.append('location', formData.location);
       data.append('contactNo', formData.contactNo);
       data.append('startDate', formData.startDate);
@@ -456,47 +483,57 @@ export default function Requestss() {
       data.append('pickupLocation', formData.pickupLocation);
       data.append('payType', formData.payType);
       data.append('rate', formData.rate);
+      data.append('deliveryInstructions', formData.deliveryInstructions);
 
-      // Handle images separately
+      // Handle images
       if (formData.images && formData.images.length > 0) {
         formData.images.forEach(image => {
           data.append('images[]', image);
         });
       }
 
-      // Double check the client name in FormData
-      console.log('Client name in FormData:', data.get('technicianTitle'));
+      // Make the request
+      const response = await axios.post(`${BASE_URL}/client/requests`, data, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
 
-        const response = await axios.post(`${BASE_URL}/client/requests`, data, {
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'multipart/form-data'
-          }
-        });
-
-      // Log the full response for debugging
-      console.log('Full API Response:', response);
-      console.log('Response Data:', response.data);
-      console.log('Returned Client Name:', response.data.data.technicianTitle);
-
-        if (response.data.status === 'success') {
-          toast.success('Request submitted successfully');
-          resetForm();
-          fetchRequests();
+      // Check if response matches expected format
+      if (response.data.status === 'success' && response.data.data) {
+        toast.success(response.data.message || 'Request submitted successfully');
+        resetForm();
+        fetchRequests();
+      } else {
+        throw new Error('Unexpected response format');
       }
     } catch (error) {
-      console.error('Full error:', error);
-      console.error('Error response:', error.response?.data);
-      if (error.response?.status === 401) {
+      console.error('Error submitting request:', error);
+      
+      if (error.response?.status === 422) {
+        const validationErrors = error.response.data.error_message;
+        const errorMessage = Object.values(validationErrors)
+          .flat()
+          .join('\n');
+        toast.error(errorMessage);
+      } else if (error.response?.status === 404) {
+        toast.error('Service endpoint not found. Please contact support.');
+      } else if (error.response?.status === 401) {
         toast.error('Your session has expired. Please login again.');
         window.location.href = '/login';
       } else if (error.response?.data?.error_message) {
-        const errorMessages = Object.values(error.response.data.error_message)
-          .flat()
-          .join(', ');
-        toast.error(errorMessages);
+        if (typeof error.response.data.error_message === 'string') {
+          toast.error(error.response.data.error_message);
+        } else {
+          const errorMessages = Object.values(error.response.data.error_message)
+            .flat()
+            .join(', ');
+          toast.error(errorMessages);
+        }
       } else {
-        toast.error('Something went wrong');
+        toast.error('Failed to submit request. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -752,6 +789,21 @@ export default function Requestss() {
               ></textarea>
               {errors.specialTools && (
                 <span className="text-red-500 text-sm">{errors.specialTools}</span>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2 mt-6 w-full">
+              <label className="text-[#606060] font-[600] text-sm">
+                Delivery Instructions <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                name="deliveryInstructions"
+                value={formData.deliveryInstructions}
+                onChange={handleInputChange}
+                className={`border ${errors.deliveryInstructions ? 'border-red-500' : 'border-[#E5E5E5]'} bg-[#F5F6FA] text-[#636262] rounded-md p-2 w-full h-[100px] outline-none`}
+              ></textarea>
+              {errors.deliveryInstructions && (
+                <span className="text-red-500 text-sm">{errors.deliveryInstructions}</span>
               )}
             </div>
             

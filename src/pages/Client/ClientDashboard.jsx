@@ -3,7 +3,7 @@ import StatsCards from "./components/StatsCards";
 import { Link } from "react-router-dom";
 import axios from "axios";
 
-const BASE_URL = 'https://beta.techskims.tech/api';
+const BASE_URL = 'https://api.techskims.com/api';
 
 function ClientDashboard() {
   const [clientName, setClientName] = useState('');
@@ -51,6 +51,7 @@ function ClientDashboard() {
         </Link>
       </div>
       <StatsCards />
+      
     </div>
   );
 }

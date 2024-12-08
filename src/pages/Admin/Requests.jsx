@@ -19,7 +19,7 @@ import 'jspdf-autotable';
 import { useNavigate } from 'react-router-dom';
 import logo from '@/assets/techskims3.png';
 
-const BASE_URL = 'https://beta.techskims.tech/api';
+const BASE_URL = 'https://api.techskims.com/api';
 
 export default function Requests() {
   const navigate = useNavigate();
@@ -44,6 +44,7 @@ export default function Requests() {
     payType: "",
     rate: "",
     images: [],
+    deliveryInstructions: "",
   });
 
   const itemsPerPage = 7;
@@ -103,7 +104,11 @@ export default function Requests() {
       }
 
       if (response.data.data) {
-        setRequests(response.data.data);
+        const requestsWithStatus = response.data.data.map(request => ({
+          ...request,
+          status: request.status?.toLowerCase() || 'pending'
+        }));
+        setRequests(requestsWithStatus);
       }
     } catch (error) {
       console.error('Error fetching requests:', error);
@@ -141,6 +146,10 @@ export default function Requests() {
       
       const data = new FormData();
       
+      if (editFormData.status) {
+        data.append('status', editFormData.status);
+      }
+      
       if (editFormData.startDate) {
         data.append('startDate', editFormData.startDate);
       }
@@ -161,6 +170,9 @@ export default function Requests() {
       }
       if (editFormData.deliverables) {
         data.append('deliverables', editFormData.deliverables);
+      }
+      if (editFormData.deliveryInstructions) {
+        data.append('deliveryInstructions', editFormData.deliveryInstructions);
       }
       
       data.append('_method', 'PUT');
@@ -200,8 +212,8 @@ export default function Requests() {
     }
   };
 
-  // Generate PDF
-  const generatePDF = (request) => {
+  // Modify the generatePDF function to handle image loading
+  const generatePDF = async (request) => {
     // Debug logging
     console.log('Generating PDF for request:', request);
     console.log('Deliverables:', request.deliverables);
@@ -211,20 +223,20 @@ export default function Requests() {
     
     // Add TechSkims logo using the imported image
     doc.addImage(
-      logo, // Using the imported logo
+      logo,
       'PNG',
-      10, // x position
-      10, // y position
-      50, // width
-      35  // height
+      10,
+      10,
+      60,
+      50
     );
     
-    // Add title with adjusted position to accommodate logo
+    // Add title with adjusted position to accommodate logo and margin
     doc.setFontSize(20);
-    doc.text('Request Details', 105, 30, { align: 'center' });
+    doc.text('Request Details', 105, 70, { align: 'center' });
     
-    let yPos = 40; // Adjusted starting position for content
-    
+    let yPos = 80;
+
     // Add request information
     doc.setFontSize(12);
     
@@ -271,7 +283,7 @@ export default function Requests() {
 
     yPos = doc.lastAutoTable.finalY + 10;
 
-    // Add images section if there are images
+    // Modified images section
     const images = request.request_images || request.images || [];
     if (images && images.length > 0) {
       doc.setFontSize(12);
@@ -279,25 +291,49 @@ export default function Requests() {
       doc.text('Request Images', 10, yPos);
       
       yPos += 10;
-      
-      // Add a note about images
-      doc.setFontSize(10);
-      doc.setFont(undefined, 'normal');
-      doc.text(
-        'Note: Images can be viewed in the online system at beta.techskims.tech', 
-        10, 
-        yPos
-      );
-      
-      yPos += 10;
 
-      // Add image URLs as text instead of trying to embed them
-      images.forEach((image, index) => {
-        const imageUrl = image.image || image.url || image;
-        doc.setFontSize(8);
-        doc.text(`Image ${index + 1}: ${imageUrl}`, 10, yPos);
-        yPos += 5;
-      });
+      // Load and add each image
+      for (let i = 0; i < images.length; i++) {
+        try {
+          const imageUrl = images[i].image || images[i].url || images[i];
+          
+          // Fetch the image
+          const response = await fetch(imageUrl);
+          const blob = await response.blob();
+          
+          // Convert blob to base64
+          const reader = new FileReader();
+          const base64data = await new Promise((resolve) => {
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+          });
+
+          // Calculate image dimensions to fit in PDF
+          const imgWidth = 180; // Max width in the PDF
+          const imgHeight = 100; // Max height in the PDF
+
+          // Add image to PDF
+          doc.addImage(
+            base64data,
+            'JPEG',
+            10,
+            yPos,
+            imgWidth,
+            imgHeight,
+            `img${i}`,
+            'MEDIUM'
+          );
+
+          yPos += imgHeight + 10; // Add spacing after each image
+        } catch (error) {
+          console.error(`Error loading image ${i}:`, error);
+          // If image fails to load, add a placeholder text
+          doc.setFontSize(10);
+          doc.setFont(undefined, 'normal');
+          doc.text(`Image ${i + 1} could not be loaded`, 10, yPos);
+          yPos += 10;
+        }
+      }
       
       yPos += 10; // Add some spacing before next section
     }
@@ -313,7 +349,8 @@ export default function Requests() {
         ['Special Tools', request.specialTools || ''],
         ['Admin Pay Type', request.adminPayType || request.payType || ''],
         ['Admin Rate', request.adminRate || request.rate || ''],
-        ['Deliverables', request.deliverables || '']
+        ['Deliverables', request.deliverables || ''],
+        ['Delivery Instructions', request.deliveryInstructions || '']
       ],
       theme: 'grid',
       styles: regularStyle,
@@ -346,6 +383,85 @@ export default function Requests() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentRequests = filteredRequests.slice(startIndex, endIndex);
+
+  // Modify the handleCompleteRequest function to use the existing update endpoint
+  const handleCompleteRequest = async (requestId) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Authentication required');
+        return;
+      }
+
+      // Create FormData for the update
+      const data = new FormData();
+      data.append('status', 'completed');
+      data.append('_method', 'PUT');
+
+      const response = await axios.post(
+        `${BASE_URL}/admin/requests/${requestId}`,
+        data,
+        {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (response.data.status === 'success') {
+        toast.success('Request marked as completed');
+        fetchRequests(); // Refresh the requests list
+      }
+    } catch (error) {
+      console.error('Error completing request:', error);
+      if (error.response?.status === 401) {
+        toast.error('Session expired. Please login again.');
+        navigate('/login');
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to complete request');
+      }
+    }
+  };
+
+  // Add a function to handle status changes
+  const handleStatusChange = async (requestId, newStatus) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Authentication required');
+        return;
+      }
+
+      const data = new FormData();
+      data.append('status', newStatus);
+      data.append('_method', 'PUT');
+
+      const response = await axios.post(
+        `${BASE_URL}/admin/requests/${requestId}`,
+        data,
+        {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (response.data.status === 'success') {
+        toast.success(`Request marked as ${newStatus}`);
+        fetchRequests();
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+      if (error.response?.status === 401) {
+        toast.error('Session expired. Please login again.');
+        navigate('/login');
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to update status');
+      }
+    }
+  };
 
   return (
     <>
@@ -405,6 +521,7 @@ export default function Requests() {
                     <th className="px-6 py-4 font-medium text-left">Service</th>
                     <th className="px-6 py-4 font-medium text-left w-32">Contact</th>
                     <th className="px-6 py-4 font-medium text-left w-48">Schedule</th>
+                    <th className="px-6 py-4 font-medium text-left">Status</th>
                     <th className="px-6 py-4 font-medium text-center w-28">Actions</th>
                   </tr>
                 </thead>
@@ -421,34 +538,42 @@ export default function Requests() {
                           <div className="text-gray-500 text-xs">{request.startTime}</div>
                         </div>
                       </td>
+                      <td className="px-6 py-4 text-left">
+                        <select
+                          value={request.status || 'pending'}
+                          onChange={(e) => handleStatusChange(request.id, e.target.value)}
+                          className={`px-3 py-1 rounded-full text-sm border-none focus:ring-2 focus:ring-offset-2 ${
+                            request.status === 'completed' ? 'bg-green-100 text-green-600 focus:ring-green-500' :
+                            request.status === 'ongoing' ? 'bg-blue-100 text-blue-600 focus:ring-blue-500' :
+                            request.status === 'pending' ? 'bg-[#ffa85633] text-[#FFA756] focus:ring-yellow-500' :
+                            'bg-gray-100 text-gray-600 focus:ring-gray-500'
+                          }`}
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="ongoing">Ongoing</option>
+                          <option value="completed">Completed</option>
+                        </select>
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-center gap-2">
-                          {/* <button 
-                            onClick={() => {
-                              setSelectedRequest(request);
-                              setShowViewModal(true);
-                            }}
-                            className="rounded-full p-2 text-blue-500 hover:bg-blue-50"
-                            title="View Details"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </button> */}
                           <button 
                             onClick={() => {
                               setSelectedRequest(request);
                               setEditFormData({
-                                ...request,  // Spread all request properties
+                                ...request,
                                 adminPayType: request.adminPayType || request.payType,
                                 adminRate: request.adminRate || request.rate,
                                 deliverables: request.deliverables || '',
+                                deliveryInstructions: request.deliveryInstructions || '',
                               });
                               setShowEditModal(true);
                             }}
-                    className="w-full inline-flex justify-center items-center px-4 py-2 text-[#00A8E8] rounded-md focus:outline-none"
-                            
+                            className="rounded-full p-2 text-blue-500 hover:bg-blue-50"
+                            title="Edit Request"
                           >
                             <EditIcon className="h-4 w-4" />
                           </button>
+
                           <button 
                             onClick={() => generatePDF(request)}
                             className="rounded-full p-2 text-gray-500 hover:bg-gray-50"
@@ -775,6 +900,17 @@ export default function Requests() {
                           className="w-full mt-1 rounded-md border border-gray-200 p-2"
                           rows="3"
                           placeholder="Enter deliverables for this request"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm text-gray-500">Delivery Instructions</label>
+                        <textarea
+                          value={editFormData.deliveryInstructions}
+                          onChange={(e) => setEditFormData({...editFormData, deliveryInstructions: e.target.value})}
+                          className="w-full mt-1 rounded-md border border-gray-200 p-2"
+                          rows="3"
+                          placeholder="Enter delivery instructions"
                         />
                       </div>
                     </div>
