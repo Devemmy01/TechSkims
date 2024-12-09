@@ -57,20 +57,11 @@ const Hero = () => {
                 : "-translate-x-20 opacity-0"
             }`}
           >
-            <h1 className="text-5xl lg:text-7xl font-bold mb-6 leading-tight">
-              <span className="block transform transition-all duration-700 delay-300">
-                Innovate
-              </span>
-              <span className="block text-sky-blue transform transition-all duration-700 delay-500">
-                Transform
-              </span>
-              <span className="block transform transition-all duration-700 delay-700">
-                Succeed
-              </span>
+            <h1 className="text-[40px] lg:text-5xl font-bold mb-6 leading-tight">
+            Empowering Your Business with Innovative Solutions
             </h1>
-            <p className="text-xl mb-8 text-gray-300 max-w-xl transform transition-all duration-700 delay-1000">
-              Empowering businesses with cutting-edge technology solutions for
-              the digital age
+            <p className="text-base md:text-[17px] mb-8 text-gray-300 max-w-xl transform transition-all duration-700 delay-1000">
+            Discover how our cutting-edge technology solutions streamline your operations and enhance productivity. From field service management to IT installations, we provide tailored services that drive success.
             </p>
             <div className="flex gap-4 transform transition-all duration-700 delay-1200">
               <a
@@ -78,18 +69,6 @@ const Hero = () => {
                 className="bg-sky-blue text-white text-sm px-4 md:px-8 h-12 py-3 rounded-full hover:bg-sky-700 transition duration-300 flex items-center whitespace-nowrap group"
               >
                 Get started
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 ml-2 transform transition-transform duration-300 group-hover:translate-x-1"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
               </a>
               {/* <a
                 href="#contact"
@@ -111,7 +90,7 @@ const Hero = () => {
               </a> */}
               <a
                 href="#services"
-                className="border-2 border-sky-blue text-sky-blue text-sm px-4 md:px-8 h-12 rounded-full flex items-center hover:bg-sky-blue whitespace-nowrap hover:text-white transition-all duration-300 hover:scale-105"
+                className="border text-white text-sm px-4 md:px-8 h-12 rounded-full flex items-center whitespace-nowrap transition-all duration-300 hover:scale-105"
               >
                 Learn More
               </a>
@@ -120,7 +99,7 @@ const Hero = () => {
 
           {/* Animated Tech Elements */}
           <div
-            className={`flex-1 transform md:mt-20 transition-all duration-1000 delay-300 ${
+            className={`flex-1 hidden md:block transform md:mt-20 transition-all duration-1000 delay-300 ${
               isVisible
                 ? "translate-x-0 opacity-100"
                 : "translate-x-20 opacity-0"

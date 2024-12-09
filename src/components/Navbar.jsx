@@ -30,14 +30,14 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-start pt-5 -ml-20 mt-4">
             <Link to="/">
-            <img src={logo} alt="TechSkims" className="w-[320px]" />
+              <img src={logo} alt="TechSkims" className="w-[320px]" />
             </Link>
           </div>
 
           {/* Desktop Menu */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-4">
-              {menuItems.map(( item, index ) => (
+              {menuItems.map((item, index) => (
                 <Link
                   key={index}
                   to={item.url}
@@ -51,8 +51,18 @@ const Navbar = () => {
 
           <div className="gap-2 hidden md:flex">
             <Link to="/signup">
-              <button className="h-10 rounded-md border p-2 px-6">
-                Sign up
+              <button className="h-10 rounded-full border p-2 px-6">
+                Client
+              </button>
+            </Link>
+            <Link to="/signup">
+              <button className="h-10 rounded-full bg-[#001F3F] p-2 px-6">
+                Technician
+              </button>
+            </Link>
+            <Link to="/login">
+              <button className="h-10 rounded-full border p-2 px-6">
+                Login
               </button>
             </Link>
           </div>
@@ -78,9 +88,7 @@ const Navbar = () => {
                 {/* Middle line */}
                 <span
                   className={`absolute top-1/2 -translate-y-1/2 left-0 w-6 h-[2px] bg-white transform transition-all duration-300 ease-in-out ${
-                    isOpen
-                      ? "opacity-0 translate-x-3"
-                      : "group-hover:w-4"
+                    isOpen ? "opacity-0 translate-x-3" : "group-hover:w-4"
                   }`}
                 ></span>
                 {/* Bottom line */}
@@ -124,12 +132,20 @@ const Navbar = () => {
         </div>
 
         <div className="flex flex-col mx-auto items-center justify-center -mt-4 gap-2 md:hidden">
-            <Link to="/signup" onClick={toggleMenu}>
-              <button className="h-10 rounded-md border p-2 px-6">
-                Sign up
-              </button>
-            </Link>
-          </div>
+          <Link to="/signup">
+            <button className="h-10 rounded-full border p-2 px-6">
+              Client
+            </button>
+          </Link>
+          <Link to="/signup">
+            <button className="h-10 rounded-full bg-[#001F3F] p-2 px-6">
+              Technician
+            </button>
+          </Link>
+          <Link to="/login">
+            <button className="h-10 rounded-full border p-2 px-6">Login</button>
+          </Link>
+        </div>
       </div>
     </nav>
   );
