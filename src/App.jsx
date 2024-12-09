@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate, BrowserRouter } from 'react-router-dom';
 import { useEffect } from 'react';
 import Login from './pages/Login';
 import Layout from './Layout/Layout';
@@ -27,7 +27,8 @@ import Requests from './pages/Admin/Requests';
 // import Settings from './pages/Admin/Settings';
 
 import { ToastContainer, toast } from 'react-toastify';
-import { setupAxiosInterceptors } from './utils/axiosConfig';
+import axiosInstance from './utils/axiosConfig';
+import 'react-toastify/dist/ReactToastify.css';
 
 const ScrollToSection = () => {
   const location = useLocation();
@@ -56,15 +57,8 @@ const App = () => {
   const hideFooterPaths = ['/signup', '/verify-email', '/login', '/admin/dashboard', '/admin/projects', '/admin/requests', '/client-dashboard', '/technician-dashboard', '/client-dashboard/requests', 'client-dashboard/projects', '/client-dashboard/reports', '/client-dashboard/projects'];
   const hideLayoutPaths = ['/admin/dashboard', '/admin/projects', '/admin/requests', '/client-dashboard', '/technician-dashboard', '/client-dashboard/requests', '/client-dashboard/projects', '/client-dashboard/reports'];
 
-  useEffect(() => {
-    setupAxiosInterceptors();
-  }, []);
-
   return (
-    <>
-      <ToastContainer />
-      <ScrollToSection />
-      
+    <div className="app">
       {!hideLayoutPaths.includes(location.pathname) && <Layout />}
       
       <Routes>
@@ -112,8 +106,30 @@ const App = () => {
       </Routes>
       
       {!hideFooterPaths.includes(location.pathname) && <Footer />}
-    </>
+      
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
+    </div>
   );
 };
 
-export default App;
+// Create a wrapper component that includes BrowserRouter
+const AppWrapper = () => {
+  return (
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  );
+};
+
+export default AppWrapper;

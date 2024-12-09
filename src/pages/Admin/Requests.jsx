@@ -19,7 +19,7 @@ import 'jspdf-autotable';
 import { useNavigate } from 'react-router-dom';
 import logo from '@/assets/techskims3.png';
 
-const BASE_URL = 'https://api.techskims.com/api';
+const BASE_URL = 'https://beta.techskims.tech/api';
 
 export default function Requests() {
   const navigate = useNavigate();

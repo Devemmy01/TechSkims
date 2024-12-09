@@ -15,7 +15,7 @@ import {
   DollarSign
 } from "lucide-react";
 
-const BASE_URL = 'https://api.techskims.com/api';
+const BASE_URL = 'https://beta.techskims.tech/api';
 
 // Define handleAuthError before using it in interceptors
 const handleAuthError = () => {

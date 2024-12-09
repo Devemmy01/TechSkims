@@ -1,39 +1,31 @@
 import axios from 'axios';
-import { toast } from 'react-toastify';
 
-export const setupAxiosInterceptors = () => {
-  axios.interceptors.request.use(
-    (config) => {
-      // Don't check for token on login request
-      if (config.url.includes('/login')) {
-        return config;
-      }
+const instance = axios.create({
+  baseURL: 'https://beta.techskims.tech/api',
+  headers: {
+    'Accept': 'application/json'
+  }
+});
 
-      const token = localStorage.getItem('token');
-      const userRole = localStorage.getItem('userRole');
-      
-      if (!token || !userRole) {
-        return Promise.reject(new Error('No authentication token'));
+// Add a request interceptor
+instance.interceptors.request.use(
+  (config) => {
+    // Remove verify-code and email/resend from public endpoints
+    const publicEndpoints = ['/register', '/login'];
+    
+    if (!publicEndpoints.some(endpoint => config.url.includes(endpoint))) {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('No authentication token');
       }
-      
       config.headers.Authorization = `Bearer ${token}`;
-      return config;
-    },
-    (error) => {
-      return Promise.reject(error);
     }
-  );
+    
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
-  axios.interceptors.response.use(
-    (response) => response,
-    (error) => {
-      if (error.response?.status === 401 && !error.config.url.includes('/login')) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('userRole');
-        toast.error('Your session has expired. Please login again.');
-        window.location.href = '/login';
-      }
-      return Promise.reject(error);
-    }
-  );
-}; 
+export default instance; 

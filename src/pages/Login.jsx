@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import axiosInstance from "../utils/axiosConfig";
 import { toast } from "react-toastify";
 import bg from "../assets/bg.png";
 
@@ -41,59 +41,56 @@ const Login = () => {
     formData.append("password", password);
   
     try {
-      const loginAxios = axios.create();
-      
-      const response = await loginAxios.post(
-        "https://api.techskims.com/api/login",
-        formData,
-        {
-          headers: {
-            Accept: "application/json",
-          },
-        }
-      );
+      const response = await axiosInstance.post("/login", formData);
   
       const responseData = response.data;
   
       if (responseData.status === "success") {
-        // Clear any existing tokens first
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("token");
+        // Clear any existing tokens
+        localStorage.clear();
   
-        // Store new token
+        // Store new token and user data
         const token = responseData.data.apiToken;
         localStorage.setItem("token", token);
+        localStorage.setItem("authToken", token);
   
         // Handle remember password
         if (rememberPassword) {
           localStorage.setItem("email", email);
           localStorage.setItem("password", password);
-        } else {
-          localStorage.removeItem("email");
-          localStorage.removeItem("password");
         }
   
-        // Handle role-based navigation
+        // Store user role
         const role = responseData.data.role || responseData.data.roles;
         const effectiveRole = Array.isArray(role) ? role[0] : role;
-        localStorage.setItem("userRole", effectiveRole);
+        localStorage.setItem("userRole", effectiveRole.toLowerCase());
   
-        toast.success("Login successful!");
-  
-        // Navigate based on role
-        switch(effectiveRole.toLowerCase()) {
-          case 'client':
-            navigate("/client-dashboard");
-            break;
-          case 'technician':
-            navigate("/technician-dashboard");
-            break;
-          case 'admin':
-            navigate("/admin/dashboard");
-            break;
-          default:
-            console.warn('Unknown role:', effectiveRole);
-            navigate("/client-dashboard"); // Fallback to client dashboard
+        // Check email verification status and store it
+        if (responseData.data.email_verified) {
+          localStorage.setItem("isEmailVerified", 'true');
+          toast.success("Login successful!");
+          
+          // Navigate based on role
+          switch(effectiveRole.toLowerCase()) {
+            case 'client':
+              navigate("/client-dashboard");
+              break;
+            case 'technician':
+              navigate("/technician-dashboard");
+              break;
+            case 'admin':
+              navigate("/admin/dashboard");
+              break;
+            default:
+              toast.error("Invalid user role");
+              navigate("/login");
+          }
+        } else {
+          // Store email for verification page
+          localStorage.setItem("verificationEmail", email);
+          localStorage.setItem("isEmailVerified", 'false');
+          // toast.info("Please verify your email address");
+          navigate("/verify-email");
         }
       } else {
         toast.error(responseData.message || "Login failed");

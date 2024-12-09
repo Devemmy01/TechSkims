@@ -4,9 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import axiosInstance from "../utils/axiosConfig";
+import { toast } from "react-toastify";
 import bg from "../assets/bg.png";
 
 export default function EmailVerification() {
@@ -14,6 +13,89 @@ export default function EmailVerification() {
   const [isLoading, setIsLoading] = useState(false);
   const inputs = useRef([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const email = localStorage.getItem('verificationEmail');
+    const token = localStorage.getItem('authToken');
+    const userRole = localStorage.getItem('userRole');
+    const isVerified = localStorage.getItem('isEmailVerified') === 'true';
+    const codeSent = localStorage.getItem('verificationCodeSent') === 'true';
+
+    // If email is verified or we don't have necessary data, redirect
+    if (!email || !token) {
+      navigate("/login");
+      return;
+    }
+
+    if (isVerified) {
+      // Redirect based on user role
+      switch(userRole?.toLowerCase()) {
+        case 'client':
+          navigate("/client-dashboard");
+          break;
+        case 'admin':
+          navigate("/admin/dashboard");
+          break;
+        default:
+          navigate("/login");
+      }
+      return;
+    }
+
+    // Only send verification code if it hasn't been sent yet
+    if (!codeSent) {
+      const sendInitialCode = async () => {
+        try {
+          const data = new FormData();
+          data.append('confirmation_code', '');
+          
+          const response = await axiosInstance.post('/email/resend', 
+            data,
+            {
+              headers: {
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`
+              }
+            }
+          );
+
+          if (response.data.status === "success") {
+            localStorage.setItem('verificationCodeSent', 'true');
+            toast.info("A verification code has been sent to your email");
+          }
+        } catch (error) {
+          // If the error is because email is already verified
+          if (error.response?.data?.message === 'Email already verified.') {
+            localStorage.setItem('isEmailVerified', 'true');
+            
+            // Redirect based on user role
+            switch(userRole?.toLowerCase()) {
+              case 'client':
+                navigate("/client-dashboard");
+                break;
+              case 'admin':
+                navigate("/admin/dashboard");
+                break;
+              default:
+                navigate("/login");
+            }
+            return;
+          }
+
+          const errorMessage = error.response?.data?.message || 
+                            error.response?.data?.error_message || 
+                            "Failed to send verification code";
+          toast.error(errorMessage);
+          
+          if (error.response?.status === 401) {
+            navigate("/login");
+          }
+        }
+      };
+
+      sendInitialCode();
+    }
+  }, [navigate]);
 
   const focusInput = (index) => {
     if (inputs.current[index]) {
@@ -30,7 +112,7 @@ export default function EmailVerification() {
     newCode[index] = value;
     setCode(newCode);
 
-    if (value !== "" && index < 3) {
+    if (value !== "" && index < 5) {
       focusInput(index + 1);
     }
   };
@@ -40,7 +122,7 @@ export default function EmailVerification() {
       focusInput(index - 1);
     } else if (e.key === "ArrowLeft" && index > 0) {
       focusInput(index - 1);
-    } else if (e.key === "ArrowRight" && index < 3) {
+    } else if (e.key === "ArrowRight" && index < 5) {
       focusInput(index + 1);
     }
   };
@@ -62,59 +144,97 @@ export default function EmailVerification() {
     }
   };
 
-  const handleResendCode = () => {
+  const handleResendCode = async () => {
     setIsLoading(true);
-
+    const email = localStorage.getItem('verificationEmail');
     const token = localStorage.getItem('authToken');
+    const currentCode = code.join("");
 
-    axios.post('https://api.techskims.com/api/email/resend', {}, {
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${token}`,
+    try {
+      const data = new FormData();
+      data.append('confirmation_code', currentCode);
+
+      const response = await axiosInstance.post('/email/resend', 
+        data,
+        {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (response.data.status === "success") {
+        setCode(["", "", "", "", "", ""]);
+        toast.success("A new confirmation code has been sent to your email", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+      } else {
+        toast.error(response.data.message || "Failed to resend code");
       }
-    })
-    .then((response) => {
-      console.log(response.data);
-      toast.success("A new confirmation code has been sent to your email");
-    })
-    .catch((error) => {
-      console.error(error);
-      toast.error("Failed to resend the confirmation code");
+    } catch (error) {
+      console.error("Resend code error:", error);
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error_message || 
+                          "Failed to resend the confirmation code";
+      toast.error(errorMessage);
+    } finally {
       setIsLoading(false);
-    });
+    }
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     setIsLoading(true);
-
+    const email = localStorage.getItem('verificationEmail');
     const token = localStorage.getItem('authToken');
-
+    const userRole = localStorage.getItem('userRole');
     const verificationCode = code.join("");
-    const formData = new FormData();
-    formData.append('confirmation_code', verificationCode);
-  
-    axios.post('https://api.techskims.com/api/verify-code', formData, {
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      }
-    })
-    .then((response) => {
-      console.log(response.data);
+
+    try {
+      const data = new FormData();
+      data.append('email', email);
+      data.append('confirmation_code', verificationCode);
+
+      const response = await axiosInstance.post('/verify-code', 
+        data,
+        {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
       if (response.data.status === "success") {
         toast.success("Email verified successfully");
-        navigate('/login');
+        localStorage.setItem('isEmailVerified', 'true');
+        localStorage.removeItem('verificationCodeSent');
+        
+        // Redirect based on user role after successful verification
+        if (userRole === 'admin') {
+          navigate("/admin/dashboard");
+        } else if (userRole === 'client') {
+          navigate("/client-dashboard");
+        } else {
+          navigate("/login");
+        }
       } else {
         toast.error(response.data.message || "Verification failed");
       }
-    })
-    .catch((error) => {
-      console.error(error);
-      toast.error("Failed to verify the confirmation code");
-    })
-    .finally(() => {
+    } catch (error) {
+      console.error("Verification error:", error);
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error_message || 
+                          "Failed to verify the confirmation code";
+      toast.error(errorMessage);
+    } finally {
       setIsLoading(false);
-    });
+    }
   };
 
   return (
@@ -148,7 +268,7 @@ export default function EmailVerification() {
                 </p>
               </div>
               <div className="flex flex-col relative">
-                <div className="flex justify-center gap-2">
+                <div className="flex flex-wrap justify-center gap-2">
                   {code.map((digit, index) => (
                     <Input
                       key={index}
@@ -184,19 +304,6 @@ export default function EmailVerification() {
           </CardContent>
         </Card>
       </div>
-
-      <ToastContainer
-        position="top-center"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="dark"
-      />
     </div>
   );
 }

@@ -18,7 +18,7 @@ import banner from '@/assets/banner.png'
 import bannermob from '@/assets/bannermob.png'
 import { Skeleton } from "@/components/ui/skeleton"
 
-const BASE_URL = 'https://api.techskims.com/api';
+const BASE_URL = 'https://beta.techskims.tech/api';
 
 function Projects() {
   const [searchTerm, setSearchTerm] = useState("");

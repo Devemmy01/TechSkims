@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import axiosInstance from "../utils/axiosConfig";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Button } from "@/components/ui/button";
@@ -43,70 +43,76 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
-    // Validation checks
-    const requiredFields = {
-      name: formData.name,
-      email: formData.email,
-      password: formData.password,
-      passwordConfirmation: formData.passwordConfirmation,
-      role: role,
-    };
-  
-    const missingFields = Object.entries(requiredFields)
-      .filter(([key, value]) => !value)
-      .map(([key]) => key);
-  
-    if (missingFields.length > 0) {
-      toast.error("Please fill all fields");
-      return;
-    }
-  
-    if (formData.password !== formData.passwordConfirmation) {
-      toast.error("Passwords do not match.");
-      return;
-    }
-  
+    setIsLoading(true);
+
     try {
-      setIsLoading(true);
-      const response = await axios.post(
-        "https://api.techskims.com/api/register",
-        {
-          ...formData,
-          role,
-        }
-      );
-  
-      const responseData = response.data;
-  
-      if (responseData.status === "error" && responseData.message === "Email already exists but not verified") {
-        toast.info("Email already exists but hasn't been verified. A new verification code has been sent to your email.");
-  
-        // Resend the verification code
-        await axios.post('https://api.techskims.com/api/email/resend', {
-          email: formData.email
-        }, {
-          headers: {
-            'Accept': 'application/json'
+      const data = new FormData();
+      data.append('email', formData.email);
+      data.append('password', formData.password);
+      data.append('name', formData.name);
+      data.append('password_confirmation', formData.passwordConfirmation);
+      data.append('role', role);
+
+      const response = await axiosInstance.post("/register", data);
+
+      if (response.data.status === "success") {
+        // Store necessary data
+        localStorage.setItem("verificationEmail", formData.email);
+        localStorage.setItem("authToken", response.data.data.apiToken);
+        localStorage.setItem("userRole", role.toLowerCase());
+        
+        // Check if email needs verification
+        const emailVerified = response.data.data.email_verified || false;
+        localStorage.setItem("isEmailVerified", emailVerified);
+
+        if (!emailVerified) {
+          // If email is not verified, redirect to verification page
+          toast.success("Registration successful! Please verify your email.");
+          navigate("/verify-email");
+        } else {
+          // If somehow email is already verified, redirect to appropriate dashboard
+          toast.success("Registration successful!");
+          switch(role.toLowerCase()) {
+            case 'client':
+              navigate("/client-dashboard");
+              break;
+            case 'admin':
+              navigate("/admin/dashboard");
+              break;
+            default:
+              navigate("/login");
           }
-        });
-  
-        navigate("/verify-email");
-      } else if (responseData.status === "success") {
-        const token = responseData.data.apiToken;
-        localStorage.setItem("authToken", token);
-        toast.success("Registration successful!");
-        navigate("/verify-email");
-      } else {
-        throw new Error('Unexpected response status');
+        }
       }
     } catch (error) {
-      console.error("Registration error:", error.response?.data || error.message);
-      const errorMessage =
-        error.response?.data?.error_message?.email?.[0] ||
-        error.response?.data?.message ||
-        "Registration failed. Please try again.";
-      toast.error(errorMessage);
+      console.error("Registration error details:", error);
+      
+      // Handle validation errors
+      if (error.response?.status === 422) {
+        const errorMessages = error.response?.data?.error_message;
+        
+        if (errorMessages) {
+          Object.entries(errorMessages).forEach(([field, messages]) => {
+            if (Array.isArray(messages)) {
+              messages.forEach(message => {
+                toast.error(message);
+              });
+            } else if (typeof messages === 'string') {
+              toast.error(messages);
+            }
+          });
+        } else {
+          toast.error(error.response?.data?.message || "Validation failed. Please check your input.");
+        }
+      } else {
+        const errorMessage = 
+          error.response?.data?.message ||
+          error.response?.data?.error_message ||
+          error.message ||
+          "Registration failed. Please try again.";
+        
+        toast.error(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -223,18 +229,7 @@ const Signup = () => {
           </CardContent>
         </Card>
       </div>
-      <ToastContainer
-        position="top-center"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="dark"
-      />
+    
     </div>
   );
 };
