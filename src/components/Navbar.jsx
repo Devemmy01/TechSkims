@@ -131,14 +131,14 @@ const Navbar = () => {
           ))}
         </div>
 
-        <div className="flex flex-col mx-auto items-center justify-center -mt-4 gap-2 md:hidden">
+        <div className="flex flex-col mx-auto items-center justify-center -mt-14 gap-2 md:hidden">
           <Link to="/signup">
             <button className="h-10 rounded-full border p-2 px-6">
               Client
             </button>
           </Link>
           <Link to="/signup">
-            <button className="h-10 rounded-full bg-[#001F3F] p-2 px-6">
+            <button className="h-10 rounded-full border p-2 px-6">
               Technician
             </button>
           </Link>
