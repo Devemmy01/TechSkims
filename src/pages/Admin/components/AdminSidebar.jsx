@@ -1,5 +1,6 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, FolderKanban, Settings, Users, UserCog, BarChart2, MessageSquare, User, LogOut } from 'lucide-react'
+import { toast } from 'react-toastify';
 
 import logo from "../../../assets/techskims2.png"
 
@@ -20,14 +21,45 @@ const accountItems = [
 
 export default function AdminSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }) {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem('token');
+      localStorage.removeItem('userRole');
+      toast.success('Logged out successfully');
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Error logging out');
+    }
+  };
 
   return (
     <>
       <aside
         className={`${
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        } fixed inset-y-0 left-0 w-64 transform border-r bg-white transition-transform duration-200 ease-in-out overflow-y-scroll lg:relative lg:translate-x-0`}
+        } fixed inset-y-0 left-0 w-64 transform border-r bg-white transition-transform duration-200 ease-in-out overflow-y-auto scrollbar-custom lg:relative lg:translate-x-0`}
       >
+        <style jsx>{`
+          .scrollbar-custom::-webkit-scrollbar {
+                  width: 4px;
+                  height: 4px;
+                }
+                .scrollbar-custom::-webkit-scrollbar-track {
+                  background: #f1f1f1;
+                  border-radius: 4px;
+                }
+                .scrollbar-custom::-webkit-scrollbar-thumb {
+                  background: #888;
+                  border-radius: 4px;
+                }
+                .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+                  background: #555;
+                }
+        `}</style>
+
         <div className="flex h-16 items-center border-b px-6">
           <img src={logo} alt="TechSkims" />
         </div>
@@ -72,13 +104,13 @@ export default function AdminSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }) 
             </div>
           </div>
           <div className="border-t pt-4">
-            <Link
-              to="/admin/logout"
-              className="flex items-center rounded-lg px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100"
+            <button
+              onClick={handleLogout}
+              className="flex w-full items-center rounded-lg px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100"
             >
               <LogOut className="mr-3 h-5 w-5" />
               Logout
-            </Link>
+            </button>
           </div>
         </nav>
       </aside>

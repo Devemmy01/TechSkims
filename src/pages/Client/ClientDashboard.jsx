@@ -33,7 +33,7 @@ function ClientDashboard() {
   }, []);
 
   return (
-    <div className="bg-[#F8F8F8] w-full px-4 md:px-10">
+    <div className="bg-[#F8F8F8] w-full px-4 md:px-10 absolute md:relative h-full">
       <div className="flex items-center justify-between mt-10 pb-3">
         <div>
           <h1 className="text-2xl font-[600] text-[#202224]">

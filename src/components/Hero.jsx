@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import bg from "../assets/bg.png";
+import { Link } from "react-router-dom";
 
 const Hero = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -45,7 +46,7 @@ const Hero = () => {
       </div>
 
       {/* Grid pattern overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(0,31,63,0.2)_2px,transparent_2px),linear-gradient(90deg,rgba(0,31,63,0.2)_2px,transparent_2px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_70%,transparent_100%)]"></div>
+      {/* <div className="absolute inset-0 bg-[linear-gradient(rgba(0,31,63,0.2)_2px,transparent_2px),linear-gradient(90deg,rgba(0,31,63,0.2)_2px,transparent_2px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_70%,transparent_100%)]"></div> */}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full relative pt-20 md:pb-20">
         <div className="flex flex-col md:flex-row items-center justify-between h-full gap-12 z-[9999]">
@@ -64,36 +65,18 @@ const Hero = () => {
             Discover how our cutting-edge technology solutions streamline your operations and enhance productivity. From field service management to IT installations, we provide tailored services that drive success.
             </p>
             <div className="flex gap-4 transform transition-all duration-700 delay-1200">
-              <a
-                href="#contact"
+              <Link
+                to="/contact"
                 className="bg-sky-blue text-white text-sm px-4 md:px-8 h-12 py-3 rounded-full hover:bg-sky-700 transition duration-300 flex items-center whitespace-nowrap group"
               >
                 Get started
-              </a>
-              {/* <a
-                href="#contact"
-                className="bg-sky-blue text-white px-8 py-3 rounded-full hover:bg-sky-700 transition duration-300 flex items-center whitespace-nowrap group"
-              >
-                Get Started
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 ml-2 transform transition-transform duration-300 group-hover:translate-x-1"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </a> */}
-              <a
-                href="#services"
+              </Link>
+              <Link
+                to="/services"
                 className="border text-white text-sm px-4 md:px-8 h-12 rounded-full flex items-center whitespace-nowrap transition-all duration-300 hover:scale-105"
               >
                 Learn More
-              </a>
+              </Link>
             </div>
           </div>
 

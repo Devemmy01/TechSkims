@@ -11,3 +11,19 @@
         --radius: 0.5rem;
     }
 }
+
+.scrollbar-custom::-webkit-scrollbar {
+    width: 8px;
+    height: 4px;
+  }
+  .scrollbar-custom::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  .scrollbar-custom::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+  .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }

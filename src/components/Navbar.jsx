@@ -12,9 +12,9 @@ const Navbar = () => {
 
   const menuItems = [
     { title: "Home", url: "/" },
-    { title: "Services", url: "/#services" },
-    { title: "About", url: "/#about" },
-    { title: "Contact", url: "/#contact" },
+    { title: "About", url: "/about" },
+    { title: "Services", url: "/services" },
+    { title: "Contact", url: "/contact" },
   ];
 
   return (
@@ -28,9 +28,9 @@ const Navbar = () => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-start pt-5 -ml-20 mt-4">
+          <div className="flex items-start px-3 -ml-5 pt-1">
             <Link to="/">
-              <img src={logo} alt="TechSkims" className="w-[320px]" />
+              <img src={logo} alt="TechSkims" className="w-[220px]" />
             </Link>
           </div>
 
@@ -132,17 +132,17 @@ const Navbar = () => {
         </div>
 
         <div className="flex flex-col mx-auto items-center justify-center -mt-14 gap-2 md:hidden">
-          <Link to="/signup">
+          <Link to="/signup" onClick={toggleMenu}>
             <button className="h-10 rounded-full border p-2 px-6">
               Client
             </button>
           </Link>
-          <Link to="/signup">
+          <Link to="/signup" onClick={toggleMenu}>
             <button className="h-10 rounded-full border p-2 px-6">
               Technician
             </button>
           </Link>
-          <Link to="/login">
+          <Link to="/login" onClick={toggleMenu}>
             <button className="h-10 rounded-full border p-2 px-6">Login</button>
           </Link>
         </div>

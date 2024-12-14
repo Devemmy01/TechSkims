@@ -14,7 +14,7 @@ export default defineConfig({
       '/api': {
         target: 'https://beta.techskims.tech',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
+        secure: false,
       }
     }
   }

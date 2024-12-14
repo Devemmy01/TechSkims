@@ -47,11 +47,14 @@ export default function Requests() {
     deliveryInstructions: "",
   });
 
-  const itemsPerPage = 7;
+  const itemsPerPage = 5;
 
   // Add new state for success modal
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [updatedRequest, setUpdatedRequest] = useState(null);
+
+  // Add status state at the top with other state declarations
+  const [status, setStatus] = useState("all");
 
   // Check authentication
   const checkAuth = () => {
@@ -85,7 +88,9 @@ export default function Requests() {
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken');
+
+      console.log('Fetching requests with token:', token); // Debug log
 
       const response = await axios.get(`${BASE_URL}/admin/requests`, {
         headers: {
@@ -95,33 +100,34 @@ export default function Requests() {
       });
 
       // Add detailed logging
-      console.log('Full Response:', response);
+      console.log('API Response:', response);
       console.log('Response Data:', response.data);
       console.log('Requests Array:', response.data.data);
-      if (response.data.data && response.data.data.length > 0) {
-        console.log('First Request Object:', response.data.data[0]);
-        console.log('Images in first request:', response.data.data[0].request_images);
-      }
 
-      if (response.data.data) {
-        const requestsWithStatus = response.data.data.map(request => ({
+      if (response.data && response.data.data) {
+        const formattedRequests = response.data.data.map(request => ({
           ...request,
           status: request.status?.toLowerCase() || 'pending'
         }));
-        setRequests(requestsWithStatus);
+        console.log('Formatted Requests:', formattedRequests); // Debug log
+        setRequests(formattedRequests);
+      } else {
+        setRequests([]);
       }
     } catch (error) {
       console.error('Error fetching requests:', error);
+      if (error.response) {
+        console.error('Error Response:', error.response.data);
+        console.error('Error Status:', error.response.status);
+      }
       if (error.response?.status === 401) {
         toast.error('Session expired. Please login again.');
         localStorage.removeItem('token');
-        localStorage.removeItem('userRole');
         navigate('/login');
-      } else if (error.response?.data?.message) {
-        toast.error(error.response.data.message);
       } else {
-        toast.error('Failed to fetch requests');
+        toast.error(error.response?.data?.message || 'Failed to fetch requests');
       }
+      setRequests([]);
     } finally {
       setLoading(false);
     }
@@ -129,7 +135,10 @@ export default function Requests() {
 
   // Format time to H:i format
   const formatTimeToHi = (time) => {
-    if (!time) return '';
+    if (!time) {
+      const now = new Date();
+      return `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+    }
     const [hours, minutes] = time.split(':');
     return `${hours}:${minutes}`;
   };
@@ -372,17 +381,45 @@ export default function Requests() {
     doc.save(`request-${request.id}.pdf`);
   };
 
-  // Filter requests based on search term
-  const filteredRequests = requests.filter(request => 
-    request.technicianTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    request.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    request.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  // Add search and filter handlers
+  const handleSearch = (value) => {
+    setSearchTerm(value);
+    setCurrentPage(1); // Reset to first page when searching
+  };
+
+  const handleReset = () => {
+    setStatus("all");
+    setSearchTerm("");
+    fetchRequests();
+  };
+
+  // Filter requests based on search and status
+  const filteredRequests = requests.filter((request) => {
+    console.log('Filtering request:', request); // Debug log
+    
+    const matchesSearch =
+      request.technicianTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.client?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.location?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    console.log('Matches search:', matchesSearch); // Debug log
+
+    if (!matchesSearch) return false;
+
+    if (status === "all") return true;
+    return request.status?.toLowerCase() === status.toLowerCase();
+  });
+
+  console.log('Filtered Requests:', filteredRequests); // Debug log
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
+  const paginatedRequests = filteredRequests.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
-  const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentRequests = filteredRequests.slice(startIndex, endIndex);
+  console.log('Paginated Requests:', paginatedRequests); // Debug log
 
   // Modify the handleCompleteRequest function to use the existing update endpoint
   const handleCompleteRequest = async (requestId) => {
@@ -424,7 +461,7 @@ export default function Requests() {
     }
   };
 
-  // Add a function to handle status changes
+  // Modify the handleStatusChange function
   const handleStatusChange = async (requestId, newStatus) => {
     try {
       const token = localStorage.getItem('token');
@@ -433,8 +470,19 @@ export default function Requests() {
         return;
       }
 
+      // Find the current request data
+      const currentRequest = requests.find(req => req.id === requestId);
+      
+      // Get today's date in YYYY-MM-DD format
+      const today = new Date().toISOString().split('T')[0];
+      
       const data = new FormData();
+      // Add all required fields with proper formatting
       data.append('status', newStatus);
+      data.append('startDate', currentRequest.startDate || today);
+      data.append('startTime', formatTimeToHi(currentRequest.startTime));
+      data.append('specialTools', currentRequest.specialTools || 'None');
+      data.append('deliveryInstructions', currentRequest.deliveryInstructions || 'None');
       data.append('_method', 'PUT');
 
       const response = await axios.post(
@@ -454,11 +502,43 @@ export default function Requests() {
       }
     } catch (error) {
       console.error('Error updating status:', error);
-      if (error.response?.status === 401) {
+      
+      // Handle validation errors
+      if (error.response?.status === 422) {
+        const errorMessages = error.response.data.error_message;
+        
+        // Format validation error messages
+        if (errorMessages) {
+          Object.entries(errorMessages).forEach(([field, messages]) => {
+            const message = Array.isArray(messages) ? messages[0] : messages;
+            switch (field) {
+              case 'startDate':
+                toast.error('Start date must not be in the past. Please update the request details first.');
+                break;
+              case 'startTime':
+                toast.error('Invalid time format. Please update the request details first.');
+                break;
+              case 'specialTools':
+                toast.error('Special tools information is required. Please update the request details first.');
+                break;
+              case 'deliveryInstructions':
+                toast.error('Delivery instructions are required. Please update the request details first.');
+                break;
+              default:
+                toast.error(message);
+            }
+          });
+        } else {
+          toast.error('Please ensure all required fields are properly filled');
+        }
+      } else if (error.response?.status === 401) {
         toast.error('Session expired. Please login again.');
         navigate('/login');
       } else {
-        toast.error(error.response?.data?.message || 'Failed to update status');
+        toast.error(
+          error.response?.data?.message || 
+          'Failed to update status. Please try again later.'
+        );
       }
     }
   };
@@ -474,7 +554,7 @@ export default function Requests() {
         </div>
       ) : (
         <div className="min-h-screen bg-[#F8F8F8] absolute w-full lg:w-[calc(100%-256px)] p-4 md:p-8">
-          <div className="mx-auto rounded-lg bg-[#F8F8F8] w-full p- shadow-sm">
+          <div className="mx-auto rounded-lg bg-[#F8F8F8] w-full shadow-sm">
             {/* Header */}
             <div className="mb-6">
               <h1 className="text-xl font-semibold text-gray-900">Client Requests</h1>
@@ -483,134 +563,186 @@ export default function Requests() {
 
             {/* Filters and Search */}
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div className="flex flex-wrap items-center gap-3">
-                <button className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm">
-                  <Filter className="h-4 w-4" />
+              <div className="flex flex-wrap items-center gap-3 border rounded-[10px] p-1">
+                <button className="flex items-center gap-2 text-black font-[700] rounded-md px-3 py-2 text-sm border-r">
+                  <Filter className="h-5 w-5" />
                   Filter By
                 </button>
-                
-                <select className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm">
-                  <option>Status</option>
+
+                <select
+                  className="rounded-md border-r bg-transparent outline-none font-[700] px-3 py-2"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                >
+                  <option value="all">All Status</option>
                   <option value="pending">Pending</option>
+                  <option value="ongoing">Ongoing</option>
                   <option value="completed">Completed</option>
-                  <option value="rejected">Rejected</option>
                 </select>
-                
-                <button className="text-sm text-red-500">Reset Filter</button>
+
+                <button
+                  className="font-[700] flex gap-4 text-[#EA0234]"
+                  onClick={handleReset}
+                >
+                  <svg
+                    width="12"
+                    height="16"
+                    className="mt-[2px]"
+                    viewBox="0 0 12 16"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M6 3.75V0.75L2.25 4.5L6 8.25V5.25C8.4825 5.25 10.5 7.2675 10.5 9.75C10.5 12.2325 8.4825 14.25 6 14.25C3.5175 14.25 1.5 12.2325 1.5 9.75H0C0 13.065 2.685 15.75 6 15.75C9.315 15.75 12 13.065 12 9.75C12 6.435 9.315 3.75 6 3.75Z"
+                      fill="#EA0234"
+                    />
+                  </svg>
+                  Reset Filter
+                </button>
               </div>
-              
+
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search requests..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => handleSearch(e.target.value)}
                   className="w-full rounded-md border border-slate-200 py-2 pl-10 pr-4 text-sm focus:border-gray-300 focus:outline-none md:w-64"
                 />
               </div>
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto border shadow-sm rounded-[8px] bg-white">
-              <table className="w-full min-w-[800px] table-auto">
+            <div className="overflow-x-auto bg-white rounded-t-lg shadow whitespace-nowrap scrollbar-custom">
+              <table className="min-w-full divide-y divide-gray-200">
                 <thead>
-                  <tr className="border-b text-sm text-gray-600 bg-gray-50">
-                    <th className="px-6 py-4 font-medium text-left w-16">ID</th>
-                    <th className="px-6 py-4 font-medium text-left">Technician Title</th>
-                    <th className="px-6 py-4 font-medium text-left">Service</th>
-                    <th className="px-6 py-4 font-medium text-left w-32">Contact</th>
-                    <th className="px-6 py-4 font-medium text-left w-48">Schedule</th>
-                    <th className="px-6 py-4 font-medium text-left">Status</th>
-                    <th className="px-6 py-4 font-medium text-center w-28">Actions</th>
+                  <tr className="border-b text-sm text-black uppercase bg-gray-50">
+                    <th className="px-6 py-4 font-bold text-left w-16">ID</th>
+                    <th className="px-6 py-4 font-bold text-left">Technician Title</th>
+                    <th className="px-6 py-4 font-bold text-left">Service</th>
+                    <th className="px-6 py-4 font-bold text-left w-32">Contact</th>
+                    <th className="px-6 py-4 font-bold text-left w-48">Schedule</th>
+                    <th className="px-6 py-4 font-bold text-left">Status</th>
+                    <th className="px-6 py-4 font-bold text-center w-28">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {currentRequests.map((request) => (
-                    <tr key={request.id} className="border-b text-sm hover:bg-gray-50">
-                      <td className="px-6 py-4 text-left">{request.id}</td>
-                      <td className="px-6 py-4 text-left font-medium text-gray-900">{request.technicianTitle}</td>
-                      <td className="px-6 py-4 text-left">{request.service}</td>
-                      <td className="px-6 py-4 text-left">{request.contactNo}</td>
-                      <td className="px-6 py-4 text-left">
-                        <div>
-                          <div className="text-gray-900">{request.startDate}</div>
-                          <div className="text-gray-500 text-xs">{request.startTime}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-left">
-                        <select
-                          value={request.status || 'pending'}
-                          onChange={(e) => handleStatusChange(request.id, e.target.value)}
-                          className={`px-3 py-1 rounded-full text-sm border-none focus:ring-2 focus:ring-offset-2 ${
-                            request.status === 'completed' ? 'bg-green-100 text-green-600 focus:ring-green-500' :
-                            request.status === 'ongoing' ? 'bg-blue-100 text-blue-600 focus:ring-blue-500' :
-                            request.status === 'pending' ? 'bg-[#ffa85633] text-[#FFA756] focus:ring-yellow-500' :
-                            'bg-gray-100 text-gray-600 focus:ring-gray-500'
-                          }`}
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="ongoing">Ongoing</option>
-                          <option value="completed">Completed</option>
-                        </select>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-center gap-2">
-                          <button 
-                            onClick={() => {
-                              setSelectedRequest(request);
-                              setEditFormData({
-                                ...request,
-                                adminPayType: request.adminPayType || request.payType,
-                                adminRate: request.adminRate || request.rate,
-                                deliverables: request.deliverables || '',
-                                deliveryInstructions: request.deliveryInstructions || '',
-                              });
-                              setShowEditModal(true);
-                            }}
-                            className="rounded-full p-2 text-blue-500 hover:bg-blue-50"
-                            title="Edit Request"
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {paginatedRequests.length > 0 ? (
+                    paginatedRequests.map((request) => (
+                      <tr key={request.id} className="border-b text-sm hover:bg-gray-50">
+                        <td className="px-6 py-4 text-left">{request.id}</td>
+                        <td className="px-6 py-4 text-left font-medium text-gray-900">{request.technicianTitle}</td>
+                        <td className="px-6 py-4 text-left">{request.service}</td>
+                        <td className="px-6 py-4 text-left">{request.contactNo}</td>
+                        <td className="px-6 py-4 text-left">
+                          <div>
+                            <div className="text-gray-900">{request.startDate}</div>
+                            <div className="text-gray-500 text-xs">{request.startTime}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-left">
+                          <select
+                            value={request.status || 'pending'}
+                            onChange={(e) => handleStatusChange(request.id, e.target.value)}
+                            className={`px-2 py-1 rounded-md text-sm border-none outline-none appearance-none -webkit-appearance-none text-center w-fit ${
+                              request.status === 'completed' ? 'bg-green-100 text-green-500 font-semibold' :
+                              request.status === 'ongoing' ? 'bg-blue-100 font-semibold text-blue-500' :
+                              request.status === 'pending' ? 'bg-[#ffa85633] text-[#FFA756] font-semibold' :
+                              'bg-gray-100 text-gray-600'
+                            }`}
                           >
-                            <EditIcon className="h-4 w-4" />
-                          </button>
+                            <option value="pending">Pending</option>
+                            <option value="ongoing">Ongoing</option>
+                            <option value="completed">Completed</option>
+                          </select>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-center gap-2">
+                            <button 
+                              onClick={() => {
+                                setSelectedRequest(request);
+                                setEditFormData({
+                                  ...request,
+                                  adminPayType: request.adminPayType || request.payType,
+                                  adminRate: request.adminRate || request.rate,
+                                  deliverables: request.deliverables || '',
+                                  deliveryInstructions: request.deliveryInstructions || '',
+                                });
+                                setShowEditModal(true);
+                              }}
+                              className="rounded-full p-2 text-blue-500 hover:bg-blue-50"
+                              title="Edit Request"
+                            >
+                              <EditIcon className="h-4 w-4" />
+                            </button>
 
-                          <button 
-                            onClick={() => generatePDF(request)}
-                            className="rounded-full p-2 text-gray-500 hover:bg-gray-50"
-                            title="Download PDF"
-                          >
-                            <Download className="h-4 w-4" />
-                          </button>
-                        </div>
+                            <button 
+                              onClick={() => generatePDF(request)}
+                              className="rounded-full p-2 text-gray-500 hover:bg-gray-50"
+                              title="Download PDF"
+                            >
+                              <Download className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="7" className="px-6 py-4 whitespace-nowrap text-center text-gray-500">
+                        No requests found
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
 
             {/* Pagination */}
-            <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
-              <span>
-                Showing {startIndex + 1}-{Math.min(endIndex, filteredRequests.length)} of {filteredRequests.length}
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="rounded p-1 hover:bg-gray-100 disabled:opacity-50"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="rounded p-1 hover:bg-gray-100 disabled:opacity-50"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-b-lg">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    Showing <span className="font-medium">{((currentPage - 1) * itemsPerPage) + 1}</span> to{' '}
+                    <span className="font-medium">
+                      {Math.min(currentPage * itemsPerPage, filteredRequests.length)}
+                    </span>{' '}
+                    of <span className="font-medium">{filteredRequests.length}</span> results
+                  </p>
+                </div>
+                <div className="flex">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center rounded-l-md bg-white px-2 py-2 text-gray-400 border-l border-t border-b border-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                  >
+                    <span className="sr-only">Previous</span>
+                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path
+                        fillRule="evenodd"
+                        d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="relative inline-flex items-center rounded-r-md bg-white px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                  >
+                    <span className="sr-only">Next</span>
+                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path
+                        fillRule="evenodd"
+                        d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* View Modal */}

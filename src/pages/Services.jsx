@@ -1,70 +1,117 @@
+import { useEffect, useState } from "react";
+import bg from "../assets/bg.png";
+import axios from "axios";
+import {
+  NetworkIcon,
+  FieldServiceIcon,
+  RemoteSupportIcon,
+  SecurityIcon,
+  InfrastructureIcon,
+  WirelessIcon,
+  OnsiteSupportIcon,
+  WebsiteIcon,
+} from "../components/ServiceIcons";
+import Section from "../components/Section";
+
 const Services = () => {
-  const services = [
-    {
-      icon: "fas fa-network-wired",
-      title: "Network Services",
-      description: "Complete network solutions including design, installation, and maintenance for reliable business infrastructure."
-    },
-    {
-      icon: "fas fa-truck",
-      title: "Field Services Vending",
-      description: "Professional IT support at your location with rapid response times and expert technicians."
-    },
-    {
-      icon: "fas fa-mobile-alt",
-      title: "Remote Support",
-      description: "Instant technical assistance and problem resolution through secure remote connections."
-    },
-    {
-      icon: "fas fa-shield-alt",
-      title: "Cybersecurity",
-      description: "Comprehensive security solutions to protect your business from modern digital threats."
-    },
-    {
-      icon: "fas fa-server",
-      title: "Infrastructure Setup",
-      description: "Complete hardware and software deployment services for your business needs."
-    },
-    {
-      icon: "fas fa-wifi",
-      title: "Wireless Solutions",
-      description: "Professional WiFi installation and heat mapping for optimal coverage and performance."
-    },
-    {
-      icon: "fas fa-users-cog",
-      title: "Onsite Support/Staff Augmentation",
-      description: "Flexible IT staffing solutions to supplement your existing team or project needs."
-    },
-    {
-      icon: "fas fa-globe",
-      title: "Website Services",
-      description: "Custom website design and development to establish your digital presence."
-    }
-  ];
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const getIconComponent = (serviceName) => {
+    const name = serviceName.toLowerCase();
+    if (name.includes('network')) return <NetworkIcon />;
+    if (name.includes('field') || name.includes('vending')) return <FieldServiceIcon />;
+    if (name.includes('remote')) return <RemoteSupportIcon />;
+    if (name.includes('security') || name.includes('cyber')) return <SecurityIcon />;
+    if (name.includes('infrastructure')) return <InfrastructureIcon />;
+    if (name.includes('wireless') || name.includes('wifi')) return <WirelessIcon />;
+    if (name.includes('onsite') || name.includes('staff')) return <OnsiteSupportIcon />;
+    if (name.includes('website')) return <WebsiteIcon />;
+    return <NetworkIcon />; // default icon
+  };
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const response = await axios.get("https://beta.techskims.tech/api/services");
+        const servicesData = response.data.data || response.data;
+        setServices(Array.isArray(servicesData) ? servicesData : []);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching services:", err);
+        setError("Failed to fetch services");
+        setLoading(false);
+      }
+    };
+
+    fetchServices();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-sky-blue"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-screen text-red-500">
+        {error}
+      </div>
+    );
+  }
+
+  if (!Array.isArray(services)) {
+    return (
+      <div className="flex justify-center items-center min-h-screen text-red-500">
+        No services available
+      </div>
+    );
+  }
 
   return (
-    <section id="services" className="py-20 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl font-bold text-center mb-12 text-navy-blue">Our Services</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {services.map((service, index) => (
-            <div key={index} className="p-6 bg-white rounded-lg shadow-lg hover:shadow-xl transition duration-300 border border-gray-100">
-              <div className="text-center">
-                <i className={`${service.icon} text-4xl text-sky-blue mb-4`}></i>
-                <h3 className="text-xl font-semibold mb-3 text-navy-blue">{service.title}</h3>
-                <p className="text-gray-600">{service.description}</p>
+    <>
+      <section
+        id="home"
+        className="bg-navy-blue text-white py-20 relative overflow-hidden"
+        style={{
+          backgroundImage: `url(${bg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <h2 className="text-3xl font-bold text-center mb-6 pt-20 text-white">
+          Our Services
+        </h2>
+      </section>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:p-14 pb-5 bg-[#F7FBFF]">
+        {services.map((service) => (
+          <div
+            key={service._id}
+            className="p-6"
+          >
+            <div className="text-center">
+              <div className="flex justify-center mb-4">
+                {getIconComponent(service.name)}
               </div>
-              <div className="mt-4 text-center">
-                <a href="#contact" className="text-sky-blue hover:text-navy-blue transition duration-300 text-sm font-medium">
-                  Learn More →
-                </a>
-              </div>
+              <h3 className="text-[20px] md:text-[26px] font-[700] mb-3 text-black">
+                {service.name}
+              </h3>
+              <p className="text-black text-[16px] md:text-[18px]">{service.description}</p>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
-    </section>
+
+      <div className="mb-10">
+        <Section />
+      </div>
+    </>
   );
 };
 
-export default Services; 
+export default Services;
