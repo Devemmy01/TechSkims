@@ -9,13 +9,13 @@ const BASE_URL = "https://beta.techskims.tech/api";
 const api = axios.create({
   baseURL: BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
-  }
+    "Content-Type": "application/json",
+  },
 });
 
 // Add request interceptor to include token
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -119,7 +119,7 @@ const AdminServices = () => {
   const fetchServices = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/admin/services');
+      const response = await api.get("/admin/services");
       if (response.data.status === "success") {
         setServices(response.data.data);
       }
@@ -143,8 +143,8 @@ const AdminServices = () => {
   const handleAddService = async (formData) => {
     try {
       setLoading(true);
-      const response = await api.post('/admin/services', formData);
-      
+      const response = await api.post("/admin/services", formData);
+
       if (response.data.status === "success") {
         toast.success("Service added successfully");
         setIsModalOpen(false);
@@ -173,7 +173,7 @@ const AdminServices = () => {
   const handleUpdateService = async (formData) => {
     try {
       setLoading(true);
-      
+
       // Only include changed fields in the update request
       const updatedFields = {};
       if (formData.name !== selectedService.name) {
@@ -192,10 +192,10 @@ const AdminServices = () => {
       }
 
       const response = await api.put(
-        `/admin/services/${selectedService.id}`, 
+        `/admin/services/${selectedService.id}`,
         updatedFields
       );
-      
+
       if (response.data.status === "success") {
         toast.success("Service updated successfully");
         setIsModalOpen(false);
@@ -213,7 +213,7 @@ const AdminServices = () => {
         } else {
           // Show all validation errors if there are multiple
           const allErrors = Object.values(errorMessages).flat();
-          allErrors.forEach(error => toast.error(error));
+          allErrors.forEach((error) => toast.error(error));
         }
       } else {
         toast.error("Failed to update service");
@@ -270,11 +270,32 @@ const AdminServices = () => {
           </div>
         </div>
       ) : (
-        <div className="min-h-screen bg-[#F8F8F8] absolute w-full lg:w-[calc(100%-256px)] p-4 md:p-8">
+        <div className="h-[calc(100vh-64px)] overflow-y-auto bg-[#F8F8F8] absolute w-full lg:w-[calc(100%-256px)] p-4 md:p-8 scrollbar-custom">
+
+          <style jsx>{`
+            .scrollbar-custom::-webkit-scrollbar {
+              width: 4px;
+              height: 4px;
+            }
+            .scrollbar-custom::-webkit-scrollbar-track {
+              background: #f1f1f1;
+              border-radius: 4px;
+            }
+            .scrollbar-custom::-webkit-scrollbar-thumb {
+              background: #888;
+              border-radius: 4px;
+            }
+            .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+              background: #555;
+            }
+          `}</style>
+
           <div className="mx-auto rounded-lg bg-[#F8F8F8] w-full flex justify-between items-center shadow-sm mb-6">
             <div>
               <h1 className="text-xl font-semibold text-gray-900">Services</h1>
-              <p className="text-sm text-gray-500">Manage your services here.</p>
+              <p className="text-sm text-gray-500">
+                Manage your services here.
+              </p>
             </div>
 
             <button

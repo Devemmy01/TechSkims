@@ -14,6 +14,7 @@ const Navbar = () => {
     { title: "Home", url: "/" },
     { title: "About", url: "/about" },
     { title: "Services", url: "/services" },
+    { title: "Gallery", url: "/gallery" },
     { title: "Contact", url: "/contact" },
   ];
 
@@ -107,16 +108,16 @@ const Navbar = () => {
 
       {/* Mobile Menu */}
       <div
-        className={`transform h-screen -mt-16 fixed transition-all duration-500 ease-in-out ${
+        className={`transform h-screen overflow-y-auto -mt-16 fixed transition-all duration-500 ease-in-out ${
           isOpen ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0"
         } md:hidden absolute w-full bg-navy-blue z-50`}
       >
-        <div className="flex flex-col justify-center items-center h-[80%] space-y-3">
+        <div className="flex flex-col justify-center items-center h-[80%] space-y-">
           {menuItems.map((item, index) => (
             <Link
               key={index}
               to={item.url}
-              className={`text-center font-bold text-4xl hover:text-sky-blue hover:bg-sky-blue/10 px-8 py-4 rounded-md transition-all duration-300 transform group flex flex-col items-center gap-2 ${
+              className={`text-center font-bold text-4xl hover:text-sky-blue hover:bg-sky-blue/10 px-8 py-1 rounded-md transition-all duration-300 transform group flex flex-col items-center gap-2 ${
                 isOpen
                   ? "translate-x-0 opacity-100"
                   : "-translate-x-full opacity-0"

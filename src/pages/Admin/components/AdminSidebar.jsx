@@ -15,7 +15,6 @@ const navItems = [
 ]
 
 const accountItems = [
-  { icon: User, label: 'Account', path: '/admin/account' },
   { icon: Settings, label: 'Settings', path: '/admin/settings' },
 ]
 
@@ -40,24 +39,24 @@ export default function AdminSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }) 
       <aside
         className={`${
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        } fixed inset-y-0 left-0 w-64 transform border-r bg-white transition-transform duration-200 ease-in-out overflow-y-auto scrollbar-custom lg:relative lg:translate-x-0`}
+        } fixed inset-y-0 left-0 w-64 transform border-r bg-white transition-transform duration-200 ease-in-out overflow-y-auto scrollbar-custom lg:relative lg:translate-x-0 h-[100vh] z-[9999]`}
       >
         <style jsx>{`
           .scrollbar-custom::-webkit-scrollbar {
-                  width: 4px;
-                  height: 4px;
-                }
-                .scrollbar-custom::-webkit-scrollbar-track {
-                  background: #f1f1f1;
-                  border-radius: 4px;
-                }
-                .scrollbar-custom::-webkit-scrollbar-thumb {
-                  background: #888;
-                  border-radius: 4px;
-                }
-                .scrollbar-custom::-webkit-scrollbar-thumb:hover {
-                  background: #555;
-                }
+            width: 4px;
+            height: 4px;
+          }
+          .scrollbar-custom::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+          }
+          .scrollbar-custom::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+          }
+          .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+            background: #555;
+          }
         `}</style>
 
         <div className="flex h-16 items-center border-b px-6">
@@ -70,6 +69,7 @@ export default function AdminSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }) 
                 <Link
                   key={index}
                   to={item.path}
+                  onClick={() => setIsMobileMenuOpen(false)}
                   className={`flex items-center rounded-[8px] h-[50px] px-4 py-2 text-sm font-medium ${
                     location.pathname === item.path
                       ? 'bg-[#00A8E8] text-white'

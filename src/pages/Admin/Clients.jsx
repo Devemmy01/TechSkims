@@ -155,8 +155,27 @@ const Clients = () => {
           </div>
         </div>
       ) : (
-        <div className="min-h-screen bg-[#F8F8F8] absolute w-full lg:w-[calc(100%-256px)] p-4 md:p-8">
-          <div className="mx-auto rounded-lg bg-[#F8F8F8] w-full shadow-sm">
+        <div className="h-[calc(100vh-64px)] overflow-y-auto bg-[#F8F8F8] absolute w-full lg:w-[calc(100%-256px)] p-4 md:p-8 scrollbar-custom">
+
+          <style jsx>{`
+            .scrollbar-custom::-webkit-scrollbar {
+              width: 4px;
+              height: 4px;
+            }
+            .scrollbar-custom::-webkit-scrollbar-track {
+              background: #f1f1f1;
+              border-radius: 4px;
+            }
+            .scrollbar-custom::-webkit-scrollbar-thumb {
+              background: #888;
+              border-radius: 4px;
+            }
+            .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+              background: #555;
+            }
+          `}</style>
+
+          <div className="mx-auto rounded-lg bg-[#F8F8F8] w-full">
             {/* Header */}
             <div className="mb-6">
               <h1 className="text-xl font-semibold text-gray-900">Clients</h1>

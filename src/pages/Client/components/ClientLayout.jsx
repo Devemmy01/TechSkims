@@ -9,6 +9,12 @@ const ClientLayout = () => {
 
   return (
     <div className="flex h-screen">
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black opacity-50 z-[9997]"
+          onClick={() => setIsMobileMenuOpen(false)}
+        ></div>
+      )}
       <ClientSidebar
         isMobileMenuOpen={isMobileMenuOpen}
         setIsMobileMenuOpen={setIsMobileMenuOpen}
@@ -18,7 +24,7 @@ const ClientLayout = () => {
         
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className={`absolute top-[10px] rounded-lg lg:hidden p-2 text-gray-500 border border-[#E5E5E5] transition-transform duration-200 ease-in-out bg-white ${
+          className={`fixed top-[10px] z-[9998] rounded-lg lg:hidden p-2 text-gray-500 border border-[#E5E5E5] transition-transform duration-200 ease-in-out bg-white ${
             isMobileMenuOpen
               ? "translate-x-[250px]"
               : "translate-x-4 md:translate-x-10 "
@@ -41,7 +47,7 @@ const ClientLayout = () => {
           </svg>
         </button>
 
-        <div  className={`flex-1 transition-all bg-[#F8F8F8] duration-300 ${
+        <div  className={`flex-1 transition-all mt-16 md:mt-0 bg-[#F8F8F8] duration-300 ${
           open ? "ml-0" : ""
         }`}
       >

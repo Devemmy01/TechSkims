@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useEffect } from "react";
 
 import Hero from "../components/Hero";
 import Services from "./Services";
@@ -12,6 +13,10 @@ import lock from "../assets/lock.png";
 import Section from "../components/Section";
 
 const Home = () => {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <>
       <Hero />

@@ -29,6 +29,8 @@ import Requests from "./pages/Admin/Requests";
 import AdminServices from "./pages/Admin/AdminServices";
 import Messages from "./pages/Client/Messages";
 import Settings from "./pages/Client/Settings";
+import AdminSettings from "./pages/Admin/AdminSettings";
+import Gallery from "./pages/Gallery";
 // import Projects from './pages/Admin/Projects';
 // import Services from './pages/Admin/Services';
 import Clients from "./pages/Admin/Clients.jsx";
@@ -83,6 +85,7 @@ const App = () => {
     "/admin/clients",
     "/client-dashboard/messages",
     "/client-dashboard/settings",
+    "/admin/settings",
   ];
   const hideLayoutPaths = [
     "/admin/dashboard",
@@ -97,6 +100,7 @@ const App = () => {
     "/admin/clients",
     "/client-dashboard/messages",
     "/client-dashboard/settings",
+    "/admin/settings",
   ];
 
   return (
@@ -112,6 +116,7 @@ const App = () => {
         <Route path="/about" element={<About />} />
         <Route path="/services" element={<Services />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/gallery" element={<Gallery />} />
 
         {/* Client Dashboard Routes */}
         <Route element={<ClientLayout />}>
@@ -131,13 +136,14 @@ const App = () => {
           <Route path="/admin/requests" element={<Requests />} />
           <Route path="/admin/services" element={<AdminServices />} />
           <Route path="/admin/clients" element={<Clients />} />
+          <Route path="/admin/settings" element={<AdminSettings />} /> 
           {/* <Route path="/admin/projects" element={<Projects />} />
           
           <Route path="/admin/technicians" element={<Technicians />} />
           <Route path="/admin/messages" element={<Messages />} />
           <Route path="/admin/reports" element={<Reports />} />
           <Route path="/admin/account" element={<Account />} />
-          <Route path="/admin/settings" element={<Settings />} /> */}
+          */}
         </Route>
       </Routes>
 

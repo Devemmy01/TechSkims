@@ -27,7 +27,7 @@ const Section = () => {
               </p>
             </div>
             <div className="grid gap-2">
-              <h1 className="font-[700] text-[48px] text-white">90%</h1>
+              <h1 className="font-[700] text-[48px] text-white">100%</h1>
               <p className="text-base">
                 Projects completed on time and within budget.
               </p>
@@ -35,7 +35,7 @@ const Section = () => {
           </div>
         </div>
       </section>
-
+{/* 
       <section className="bg-white flex flex-col items-center justify-center gap-10 pb-20 w-full text-[40px] text-white p-5 md:p-20 mt-16 md:mt-0">
         <svg
           width="116"
@@ -86,7 +86,7 @@ const Section = () => {
             <p className="text-base font-[400]">CEO, Tech Innovations</p>
           </div>
         </div>
-      </section>
+      </section> */}
 
       <section className="bg-white flex flex-col w-full items-center justify-center p-5 md:p-20">
         <div className="bg-[#04203D] w-full p-[28px] rounded-[20px] flex flex-col md:flex-row justify-between">

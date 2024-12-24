@@ -32,6 +32,10 @@ const Services = () => {
   };
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
     const fetchServices = async () => {
       try {
         const response = await axios.get("https://beta.techskims.tech/api/services");

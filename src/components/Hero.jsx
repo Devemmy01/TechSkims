@@ -58,7 +58,7 @@ const Hero = () => {
                 : "-translate-x-20 opacity-0"
             }`}
           >
-            <h1 className="text-[40px] lg:text-5xl font-bold mb-6 leading-tight">
+            <h1 className="text-[40px] lg:text-5xl font-bold mb-6 leading-10 md:tracking-wide">
             Empowering Your Business with Innovative Solutions
             </h1>
             <p className="text-base md:text-[17px] mb-8 text-gray-300 max-w-xl transform transition-all duration-700 delay-1000">
@@ -95,7 +95,7 @@ const Hero = () => {
               <div className="absolute bottom-20 left-20 w-40 h-40 bg-sky-blue/10 rounded-lg backdrop-blur-sm animation-delay-2000 hover:bg-sky-blue/20 transition-colors duration-300"></div>
 
               {/* Code snippets with enhanced styling */}
-              <div className="absolute top-10 w-fit -left-36 lg:left-48 bg-navy-blue/90 p-4 rounded-lg backdrop-blur-sm border border-sky-blue/20 animation-delay-1500 hover:border-sky-blue/40 transition-all duration-300 hover:scale-105">
+              <div className="absolute top-10 w-fit lg:left-48 bg-navy-blue/90 p-4 rounded-lg backdrop-blur-sm border border-sky-blue/20 animation-delay-1500 hover:border-sky-blue/40 transition-all duration-300 hover:scale-105">
                 <pre className="text-sky-blue text-sm">
                   <code>{`// Your Business Growth Plan
 Step 1: Analyze Current Systems ✓

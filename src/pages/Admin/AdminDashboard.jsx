@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 function AdminDashboard() {
   return (
-    <div className="bg-[#F8F8F8] w-full px-4 md:px-10">
+    <div className="bg-[#F8F8F8] w-full absolute md:relative px-4 md:px-10">
 
       <div className="flex items-center justify-between mt-10 pb-3">
         <div>

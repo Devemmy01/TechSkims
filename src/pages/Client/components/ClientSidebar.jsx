@@ -77,7 +77,7 @@ export default function ClientSidebar({ isMobileMenuOpen, setIsMobileMenuOpen })
       <aside
         className={`${
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        } lg:translate-x-0 fixed lg:relative inset-y-0 left-0 z-40 w-64 transform border-r bg-white transition-transform duration-200 ease-in-out`}
+        } lg:translate-x-0 fixed lg:relative inset-y-0 left-0 z-[9999] w-64 transform border-r bg-white transition-transform duration-200 ease-in-out`}
       >
         <div className="flex h-16 items-center border-b px-6">
           <img src={logo} alt="TechSkims" />

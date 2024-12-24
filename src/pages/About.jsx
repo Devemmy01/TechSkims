@@ -1,7 +1,12 @@
+import { useEffect } from "react";
 import bg from "../assets/bg.png";
 import Section from "../components/Section";
 
 const About = () => {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <>
       <section
@@ -34,7 +39,7 @@ const About = () => {
       </div>
 
       <div className="mb-16">
-      <Section />
+        <Section />
       </div>
     </>
   );

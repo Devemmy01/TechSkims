@@ -49,7 +49,7 @@ function Projects() {
             endDate: project.completionDate || project.endDate,
             technicianTitle:
               project.technician?.name || project.technicianTitle,
-            clientName: project.client?.name || project.client || 'N/A',
+            clientName: project.client?.name || project.client || "N/A",
             status: project.status?.toLowerCase() || "pending",
           }));
           setRequests(transformedData);
@@ -79,7 +79,9 @@ function Projects() {
   const filteredRequests = requests.filter((request) => {
     const matchesSearch =
       request.service?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.technicianTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.technicianTitle
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
       request.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.id?.toString().includes(searchTerm);
 
@@ -122,7 +124,26 @@ function Projects() {
   );
 
   return (
-    <div className="bg-[#F8F8F8] w-full px-4 md:px-10 absolute lg:w-[calc(100%-256px)] pb-10">
+    <div className="bg-[#F8F8F8] w-full h-[calc(100vh-64px)] px-4 md:px-10 absolute lg:w-[calc(100%-256px)] pb-10 scrollbar-custom">
+      
+      <style jsx>{`
+        .scrollbar-custom::-webkit-scrollbar {
+          width: 4px;
+          height: 4px;
+        }
+        .scrollbar-custom::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 4px;
+        }
+        .scrollbar-custom::-webkit-scrollbar-thumb {
+          background: #888;
+          border-radius: 4px;
+        }
+        .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+          background: #555;
+        }
+      `}</style>
+
       <div className="w-full flex items-center justify-between mt-10 pb-3">
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-[600] text-[#202224]">Projects</h1>
@@ -179,28 +200,42 @@ function Projects() {
         </div>
 
         <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search requests..."
-                  value={searchTerm}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  className="w-full rounded-md border border-slate-200 py-2 pl-10 pr-4 text-sm focus:border-gray-300 focus:outline-none md:w-64"
-                />
-              </div>        
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search requests..."
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="w-full rounded-md border border-slate-200 py-2 pl-10 pr-4 text-sm focus:border-gray-300 focus:outline-none md:w-64"
+          />
+        </div>
       </div>
 
       <div className="overflow-x-auto border shadow-sm rounded-t-[8px] bg-white">
         <table className="w-full min-w-[800px] table-auto whitespace-nowrap">
           <thead>
             <tr className="border-b text-sm text-black bg-gray-50">
-              <th className="px-6 py-4 font-bold uppercase text-left w-16">ID</th>
-              <th className="px-6 py-4 font-bold uppercase text-left">Project Type</th>
-              <th className="px-6 py-4 font-bold uppercase text-left">Client Name</th>
-              <th className="px-6 py-4 font-bold uppercase text-left">Start Date</th>
-              <th className="px-6 py-4 font-bold uppercase text-left">End Date</th>
-              <th className="px-6 py-4 font-bold uppercase text-left">Technician</th>
-              <th className="px-6 py-4 font-bold uppercase text-left">Status</th>
+              <th className="px-6 py-4 font-bold uppercase text-left w-16">
+                ID
+              </th>
+              <th className="px-6 py-4 font-bold uppercase text-left">
+                Project Type
+              </th>
+              <th className="px-6 py-4 font-bold uppercase text-left">
+                Client Name
+              </th>
+              <th className="px-6 py-4 font-bold uppercase text-left">
+                Start Date
+              </th>
+              <th className="px-6 py-4 font-bold uppercase text-left">
+                End Date
+              </th>
+              <th className="px-6 py-4 font-bold uppercase text-left">
+                Technician
+              </th>
+              <th className="px-6 py-4 font-bold uppercase text-left">
+                Status
+              </th>
             </tr>
           </thead>
           {loading ? (
@@ -241,69 +276,57 @@ function Projects() {
           )}
         </table>
       </div>
-{/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between border- border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-b-lg">
-            <div>
-              <p className="text-sm text-gray-700">
-                Showing{" "}
-                <span className="font-medium">
-                  {(currentPage - 1) * itemsPerPage + 1}
-                </span>{" "}
-                to{" "}
-                <span className="font-medium">
-                  {Math.min(
-                    currentPage * itemsPerPage,
-                    filteredRequests.length
-                  )}
-                </span>{" "}
-                of{" "}
-                <span className="font-medium">{filteredRequests.length}</span>{" "}
-                results
-              </p>
-            </div>
-            <div className="flex">
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className="relative inline-flex items-center rounded-l-md bg-white px-2 py-2 text-gray-400 border-l border-t border-b border-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
-              >
-                <span className="sr-only">Previous</span>
-                <svg
-                  className="h-5 w-5"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </button>
-              <button
-                onClick={() =>
-                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                }
-                disabled={currentPage === totalPages}
-                className="relative inline-flex items-center rounded-r-md bg-white px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
-              >
-                <span className="sr-only">Next</span>
-                <svg
-                  className="h-5 w-5"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </button>
-            </div>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between border- border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-b-lg">
+          <div>
+            <p className="text-sm text-gray-700">
+              Showing{" "}
+              <span className="font-medium">
+                {(currentPage - 1) * itemsPerPage + 1}
+              </span>{" "}
+              to{" "}
+              <span className="font-medium">
+                {Math.min(currentPage * itemsPerPage, filteredRequests.length)}
+              </span>{" "}
+              of <span className="font-medium">{filteredRequests.length}</span>{" "}
+              results
+            </p>
           </div>
-        )}
+          <div className="flex">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="relative inline-flex items-center rounded-l-md bg-white px-2 py-2 text-gray-400 border-l border-t border-b border-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+            >
+              <span className="sr-only">Previous</span>
+              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path
+                  fillRule="evenodd"
+                  d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+            <button
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
+              disabled={currentPage === totalPages}
+              className="relative inline-flex items-center rounded-r-md bg-white px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+            >
+              <span className="sr-only">Next</span>
+              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path
+                  fillRule="evenodd"
+                  d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

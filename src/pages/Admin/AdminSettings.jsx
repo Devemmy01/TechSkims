@@ -17,13 +17,14 @@ export const useProfileData = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const authToken = localStorage.getItem("authToken");
+        console.log("Token:", authToken); // Debugging line
         const response = await axios.get(
-          "https://beta.techskims.tech/api/client/profile",
+          "https://beta.techskims.tech/api/admin/profile",
           {
             headers: {
               Accept: "application/json",
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${authToken}`,
             },
           }
         );
@@ -34,18 +35,19 @@ export const useProfileData = () => {
         }
         setLoading(false);
       } catch (err) {
+        console.error("Fetch profile error:", err); // Debugging line
         setError(err.message);
         setLoading(false);
       }
     };
-
+  
     fetchProfile();
   }, []);
 
   return { profile, loading, error, setProfile };
 };
 
-const Settings = () => {
+const AdminSettings = () => {
   const { profile, loading, error, setProfile } = useProfileData();
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
@@ -75,7 +77,6 @@ const Settings = () => {
     formData.append("name", profile.name);
     formData.append("email", profile.email);
     formData.append("phone", profile.phone || "");
-    formData.append("location", profile.location);
 
     // Only include password fields if a new password is being set
     if (passwordFields.password || passwordFields.passwordConfirmation) {
@@ -99,7 +100,7 @@ const Settings = () => {
 
     try {
       const response = await axios.post(
-        "https://beta.techskims.tech/api/client/profile",
+        "https://beta.techskims.tech/api/admin/profile",
         formData,
         {
           headers: {
@@ -133,7 +134,7 @@ const Settings = () => {
 
     try {
       const response = await axios.post(
-        "https://beta.techskims.tech/api/client/profile/image",
+        "https://beta.techskims.tech/api/admin/profile/image",
         formData,
         {
           headers: {
@@ -198,7 +199,7 @@ const Settings = () => {
     try {
       // First, attempt to delete the image
       const deleteResponse = await axios.delete(
-        "https://beta.techskims.tech/api/client/profile/image",
+        "https://beta.techskims.tech/api/admin/profile/image",
         {
           headers: {
             Accept: "application/json",
@@ -209,7 +210,7 @@ const Settings = () => {
 
       // Verify the deletion by fetching the latest profile data
       const verifyResponse = await axios.get(
-        "https://beta.techskims.tech/api/client/profile",
+        "https://beta.techskims.tech/api/admin/profile",
         {
           headers: {
             Accept: "application/json",
@@ -258,7 +259,7 @@ const Settings = () => {
       // Refresh the profile data to ensure UI is in sync with backend
       try {
         const refreshResponse = await axios.get(
-          "https://beta.techskims.tech/api/client/profile",
+          "https://beta.techskims.tech/api/admin/profile",
           {
             headers: {
               Accept: "application/json",
@@ -410,24 +411,6 @@ const Settings = () => {
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50"
                 />
               </div>
-
-              <div className="relative">
-                <label className="block text-sm mb-2">Location</label>
-                <Select
-                  options={countryOptions}
-                  value={
-                    countryOptions.find(
-                      (option) => option.value === profile.location
-                    ) || null
-                  }
-                  onChange={(selectedOption) =>
-                    setProfile((prev) => ({
-                      ...prev,
-                      location: selectedOption.value,
-                    }))
-                  }
-                />
-              </div>
             </div>
 
             <div className="space-y-4">
@@ -519,4 +502,4 @@ const Settings = () => {
   );
 };
 
-export default Settings;
+export default AdminSettings;
