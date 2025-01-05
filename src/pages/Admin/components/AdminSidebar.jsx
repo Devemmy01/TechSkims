@@ -3,11 +3,13 @@ import { LayoutDashboard, FolderKanban, Settings, Users, UserCog, BarChart2, Mes
 import { toast } from 'react-toastify';
 
 import logo from "../../../assets/techskims2.png"
+import { FolderKanbanIcon } from 'lucide-react';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin/dashboard' },
   { icon: FolderKanban, label: 'Projects', path: '/admin/projects' },
   { icon: Settings, label: 'Services', path: '/admin/services' },
+  { icon: FolderKanbanIcon, label: 'Gallery', path: '/admin/gallery' },
   { icon: Users, label: 'Clients', path: '/admin/clients' },
   { icon: UserCog, label: 'Technicians', path: '/admin/technicians' },
   { icon: BarChart2, label: 'Reports & Analytics', path: '/admin/reports' },

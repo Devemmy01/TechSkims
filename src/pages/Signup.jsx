@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axiosInstance from "../utils/axiosConfig";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import bg from "../assets/bg.png";
 
 const Signup = () => {
@@ -21,6 +21,15 @@ const Signup = () => {
     passwordConfirmation: "",
   });
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const roleParam = queryParams.get("role");
+    if (roleParam) {
+      setRole(roleParam);
+    }
+  }, [location.search]);
 
   const togglePasswordVisibility = () => {
     setPasswordVisible(!passwordVisible);
@@ -159,7 +168,7 @@ const Signup = () => {
                   onChange={handleChange}
                 />
               </div>
-              <div>
+              <div className="hidden">
                 <Label htmlFor="role">Select your role</Label>
                 <select
                   id="role"

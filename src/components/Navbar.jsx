@@ -51,12 +51,12 @@ const Navbar = () => {
           </div>
 
           <div className="gap-2 hidden md:flex">
-            <Link to="/signup">
+            <Link to="/signup?role=client">
               <button className="h-10 rounded-full border p-2 px-6">
                 Client
               </button>
             </Link>
-            <Link to="/signup">
+            <Link to="/signup?role=technician">
               <button className="h-10 rounded-full bg-[#001F3F] p-2 px-6">
                 Technician
               </button>
@@ -133,12 +133,12 @@ const Navbar = () => {
         </div>
 
         <div className="flex flex-col mx-auto items-center justify-center -mt-14 gap-2 md:hidden">
-          <Link to="/signup" onClick={toggleMenu}>
+          <Link to="/signup?role=client" onClick={toggleMenu}>
             <button className="h-10 rounded-full border p-2 px-6">
               Client
             </button>
           </Link>
-          <Link to="/signup" onClick={toggleMenu}>
+          <Link to="/signup?role=technician" onClick={toggleMenu}>
             <button className="h-10 rounded-full border p-2 px-6">
               Technician
             </button>

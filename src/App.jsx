@@ -43,6 +43,7 @@ import Clients from "./pages/Admin/Clients.jsx";
 import { ToastContainer, toast } from "react-toastify";
 import axiosInstance from "./utils/axiosConfig";
 import "react-toastify/dist/ReactToastify.css";
+import AdminGallery from "./pages/Admin/AdminGallery.jsx";
 
 const ScrollToSection = () => {
   const location = useLocation();
@@ -86,6 +87,7 @@ const App = () => {
     "/client-dashboard/messages",
     "/client-dashboard/settings",
     "/admin/settings",
+    "/admin/gallery",
   ];
   const hideLayoutPaths = [
     "/admin/dashboard",
@@ -101,6 +103,7 @@ const App = () => {
     "/client-dashboard/messages",
     "/client-dashboard/settings",
     "/admin/settings",
+    "/admin/gallery"
   ];
 
   return (
@@ -134,6 +137,7 @@ const App = () => {
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/projects" element={<Project />} />
           <Route path="/admin/requests" element={<Requests />} />
+          <Route path="/admin/gallery" element={<AdminGallery/>} />
           <Route path="/admin/services" element={<AdminServices />} />
           <Route path="/admin/clients" element={<Clients />} />
           <Route path="/admin/settings" element={<AdminSettings />} /> 
