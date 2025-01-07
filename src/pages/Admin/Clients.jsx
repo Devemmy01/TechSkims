@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Filter, Search, Eye, Check, X } from "lucide-react";
 import axios from "axios";
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Clients = () => {
   const [loading, setLoading] = useState(true);
@@ -11,6 +12,7 @@ const Clients = () => {
   const [status, setStatus] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchClients();
@@ -31,7 +33,7 @@ const Clients = () => {
       );
 
       if (response.data && response.data.data) {
-        console.log('Client data:', response.data.data);
+        console.log("Client data:", response.data.data);
         setClients(response.data.data);
       } else {
         setClients([]);
@@ -87,28 +89,30 @@ const Clients = () => {
   const handleActivation = async (userId, action) => {
     try {
       const authToken = localStorage.getItem("authToken");
-      
+
       console.log(`Sending ${action} request for user ${userId}`);
-      console.log(`URL: https://beta.techskims.tech/api/admin/user/${userId}/${action}`);
+      console.log(
+        `URL: https://beta.techskims.tech/api/admin/user/${userId}/${action}`
+      );
 
       const response = await axios({
-        method: 'post',
+        method: "post",
         url: `https://beta.techskims.tech/api/admin/user/${userId}/${action}`,
         headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${authToken}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
       });
 
-      console.log('Activation/Deactivation response:', response.data);
+      console.log("Activation/Deactivation response:", response.data);
 
       if (response.data.status === "success") {
         toast.success(response.data.data);
-        
+
         // Add a longer delay before fetching updated data
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
         // Fetch fresh data
         const updatedResponse = await axios.get(
           "https://beta.techskims.tech/api/admin/clients",
@@ -122,11 +126,13 @@ const Clients = () => {
 
         if (updatedResponse.data && updatedResponse.data.data) {
           // Log detailed information about the user we just updated
-          const updatedUser = updatedResponse.data.data.find(client => client.user.id === userId);
-          console.log('Updated user details:', {
+          const updatedUser = updatedResponse.data.data.find(
+            (client) => client.user.id === userId
+          );
+          console.log("Updated user details:", {
             id: userId,
             status: updatedUser?.user.status,
-            fullUserData: updatedUser
+            fullUserData: updatedUser,
           });
 
           setClients(updatedResponse.data.data);
@@ -134,13 +140,16 @@ const Clients = () => {
       }
     } catch (error) {
       console.error(`Error ${action}ing client:`, error);
-      console.error('Error response:', error.response?.data);
-      
+      console.error("Error response:", error.response?.data);
+
       if (error.response?.status === 401) {
         toast.error("Session expired. Please login again.");
-        window.location.href = '/login';
+        window.location.href = "/login";
       } else {
-        toast.error(error.response?.data?.message || `Failed to ${action} client. Please try again.`);
+        toast.error(
+          error.response?.data?.message ||
+            `Failed to ${action} client. Please try again.`
+        );
       }
     }
   };
@@ -156,7 +165,6 @@ const Clients = () => {
         </div>
       ) : (
         <div className="h-[calc(100vh-64px)] overflow-y-auto bg-[#F8F8F8] absolute w-full lg:w-[calc(100%-256px)] p-4 md:p-8 scrollbar-custom">
-
           <style jsx>{`
             .scrollbar-custom::-webkit-scrollbar {
               width: 4px;
@@ -196,20 +204,20 @@ const Clients = () => {
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     <path
-                      fill-rule="evenodd"
-                      clip-rule="evenodd"
+                      fillRule="evenodd"
+                      clipRule="evenodd"
                       d="M11 9.75C16.3848 9.75 20.75 7.73528 20.75 5.25C20.75 2.76472 16.3848 0.75 11 0.75C5.61522 0.75 1.25 2.76472 1.25 5.25C1.25 7.73528 5.61522 9.75 11 9.75Z"
                       stroke="black"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     />
                     <path
                       d="M1.25 5.25C1.25253 9.76548 4.35614 13.688 8.75 14.729V21C8.75 22.2426 9.75736 23.25 11 23.25C12.2426 23.25 13.25 22.2426 13.25 21V14.729C17.6439 13.688 20.7475 9.76548 20.75 5.25"
                       stroke="black"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     />
                   </svg>
                   Filter By
@@ -260,8 +268,7 @@ const Clients = () => {
             </div>
 
             {/* Clients Table */}
-            <div className="overflow-x-auto bg-white rounded-lg shadow whitespace-nowrap scrollbar-custom">
-              
+            <div className="overflow-x-auto bg-white rounded-lg shadow scrollbar-custom">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
@@ -329,33 +336,43 @@ const Clients = () => {
                           {client.pendingProjects}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            client.user.status === 'active'
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {client.user.status === 'active' ? 'Active' : 'Inactive'}
+                          <span
+                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              client.user.status === "active"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {client.user.status === "active"
+                              ? "Active"
+                              : "Inactive"}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex gap-2 justify-end">
-                          <button 
+                          <button
+                            onClick={() =>
+                              navigate(`/admin/clients/${client.user.id}`)
+                            }
                             className="text-white bg-[#00A8E8] hover:bg-[#00A8E8]/80 p-1.5 rounded-md cursor-pointer"
-                            onClick={() => window.location.href = `/admin/clients/${client.user.id}`}
                             title="View Profile"
                           >
                             <Eye className="h-4 w-4" />
                           </button>
-                          {client.user.status === 'active' ? (
-                            <button 
-                              onClick={() => handleActivation(client.user.id, 'deactivate')}
+                          {client.user.status === "active" ? (
+                            <button
+                              onClick={() =>
+                                handleActivation(client.user.id, "deactivate")
+                              }
                               className="text-white bg-red-500 hover:bg-red-600 p-1.5 rounded-md cursor-pointer"
                               title="Deactivate"
                             >
                               <X className="h-4 w-4" />
                             </button>
                           ) : (
-                            <button 
-                              onClick={() => handleActivation(client.user.id, 'activate')}
+                            <button
+                              onClick={() =>
+                                handleActivation(client.user.id, "activate")
+                              }
                               className="text-white bg-green-500 hover:bg-green-600 p-1.5 rounded-md cursor-pointer"
                               title="Activate"
                             >
@@ -384,21 +401,38 @@ const Clients = () => {
               <div className="flex items-center justify-between bg-white px-4 py-3 sm:px-6 rounded-b-lg">
                 <div>
                   <p className="text-sm text-gray-700">
-                    Showing <span className="font-medium">{((currentPage - 1) * itemsPerPage) + 1}</span> to{' '}
+                    Showing{" "}
                     <span className="font-medium">
-                      {Math.min(currentPage * itemsPerPage, filteredClients.length)}
-                    </span>{' '}
-                    of <span className="font-medium">{filteredClients.length}</span> results
+                      {(currentPage - 1) * itemsPerPage + 1}
+                    </span>{" "}
+                    to{" "}
+                    <span className="font-medium">
+                      {Math.min(
+                        currentPage * itemsPerPage,
+                        filteredClients.length
+                      )}
+                    </span>{" "}
+                    of{" "}
+                    <span className="font-medium">
+                      {filteredClients.length}
+                    </span>{" "}
+                    results
                   </p>
                 </div>
                 <div className="flex">
                   <button
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(prev - 1, 1))
+                    }
                     disabled={currentPage === 1}
                     className="relative inline-flex items-center rounded-l-md bg-white px-2 py-2 text-gray-400 border-l border-t border-b border-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
                   >
                     <span className="sr-only">Previous</span>
-                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <svg
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
                       <path
                         fillRule="evenodd"
                         d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
@@ -407,12 +441,18 @@ const Clients = () => {
                     </svg>
                   </button>
                   <button
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                    }
                     disabled={currentPage === totalPages}
                     className="relative inline-flex items-center rounded-r-md bg-white px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
                   >
                     <span className="sr-only">Next</span>
-                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <svg
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
                       <path
                         fillRule="evenodd"
                         d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import bg from "../assets/bg.png";
+import bgg from "../assets/client.png";
 
 const Signup = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -130,7 +131,7 @@ const Signup = () => {
   return (
     <div
       style={{
-        backgroundImage: `url(${bg})`,
+        backgroundImage: `url(${role === "client" ? bgg : bg})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
@@ -238,7 +239,6 @@ const Signup = () => {
           </CardContent>
         </Card>
       </div>
-    
     </div>
   );
 };

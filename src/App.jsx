@@ -34,7 +34,9 @@ import Gallery from "./pages/Gallery";
 // import Projects from './pages/Admin/Projects';
 // import Services from './pages/Admin/Services';
 import Clients from "./pages/Admin/Clients.jsx";
-// import Technicians from './pages/Admin/Technicians';
+import ClientDetails from "./pages/Admin/ClientDetails.jsx";
+import Technicians from "./pages/Admin/Technicians";
+import TechniciansDetails from "./pages/Admin/TechniciansDetails.jsx";
 // import Reports from './pages/Admin/Reports';
 // import Messages from './pages/Admin/Messages';
 // import Account from './pages/Admin/Account';
@@ -88,6 +90,9 @@ const App = () => {
     "/client-dashboard/settings",
     "/admin/settings",
     "/admin/gallery",
+    "/admin/technicians",
+    "/admin/clients/:id",
+    "/admin/technicians/:id"
   ];
   const hideLayoutPaths = [
     "/admin/dashboard",
@@ -100,15 +105,22 @@ const App = () => {
     "/client-dashboard/reports",
     "/admin/services",
     "/admin/clients",
+    "/admin/technicians",
     "/client-dashboard/messages",
     "/client-dashboard/settings",
     "/admin/settings",
-    "/admin/gallery"
+    "/admin/gallery",
+    "/admin/clients/:id",
+    "/admin/technicians/:id"
   ];
 
   return (
     <div className="app">
-      {!hideLayoutPaths.includes(location.pathname) && <Layout />}
+      {!hideFooterPaths.some((path) =>
+        path.includes(":")
+          ? location.pathname.match(new RegExp(path.replace(":id", "\\d+")))
+          : path === location.pathname
+      ) && <Layout />}
 
       <Routes>
         {/* User Routes */}
@@ -137,13 +149,14 @@ const App = () => {
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/projects" element={<Project />} />
           <Route path="/admin/requests" element={<Requests />} />
-          <Route path="/admin/gallery" element={<AdminGallery/>} />
+          <Route path="/admin/gallery" element={<AdminGallery />} />
           <Route path="/admin/services" element={<AdminServices />} />
           <Route path="/admin/clients" element={<Clients />} />
-          <Route path="/admin/settings" element={<AdminSettings />} /> 
-          {/* <Route path="/admin/projects" element={<Projects />} />
-          
+          <Route path="/admin/settings" element={<AdminSettings />} />
           <Route path="/admin/technicians" element={<Technicians />} />
+          <Route path="/admin/clients/:id" element={<ClientDetails />} />
+          <Route path="/admin/technicians/:id" element={<TechniciansDetails />} />
+          {/* <Route path="/admin/projects" element={<Projects />} />
           <Route path="/admin/messages" element={<Messages />} />
           <Route path="/admin/reports" element={<Reports />} />
           <Route path="/admin/account" element={<Account />} />
@@ -151,7 +164,11 @@ const App = () => {
         </Route>
       </Routes>
 
-      {!hideFooterPaths.includes(location.pathname) && <Footer />}
+      {!hideFooterPaths.some((path) =>
+        path.includes(":")
+          ? location.pathname.match(new RegExp(path.replace(":id", "\\d+")))
+          : path === location.pathname
+      ) && <Footer />}
 
       <ToastContainer
         position="top-center"
