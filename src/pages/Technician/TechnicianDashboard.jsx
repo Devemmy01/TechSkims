@@ -14,7 +14,7 @@ function TechnicianDashboard() {
         const token = localStorage.getItem('token');
         if (!token) return;
 
-        const response = await axios.get(`${BASE_URL}/client/profile`, {
+        const response = await axios.get(`${BASE_URL}/technician/profile`, {
           headers: {
             'Accept': 'application/json',
             'Authorization': `Bearer ${token}`
@@ -44,10 +44,10 @@ function TechnicianDashboard() {
           </p>
         </div>
         <Link 
-          to="/client-dashboard/requests" 
+          to="/technician-dashboard/projects" 
           className="bg-[#00a6e8] hover:bg-[#00a6e8]/80 transition-all duration-300 cursor-pointer rounded-[4px] h-[48px] w-fit flex items-center px-5 text-white whitespace-nowrap"
         >
-          New Request
+          View Projects
         </Link>
       </div>
       <StatsCards />

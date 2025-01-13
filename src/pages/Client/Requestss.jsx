@@ -17,31 +17,16 @@ import {
 
 const BASE_URL = 'https://beta.techskims.tech/api';
 
-// Define handleAuthError before using it in interceptors
 const handleAuthError = () => {
-  console.log('handleAuthError called');
-  console.log('Current token:', localStorage.getItem('token'));
-  console.log('Current userRole:', localStorage.getItem('userRole'));
-  
-  // Comment out the localStorage removal and redirect
-  // localStorage.removeItem('token');
-  // localStorage.removeItem('userRole');
   toast.error('Auth error occurred - debugging mode');
-  // window.location.href = '/login';
 };
 
-// Remove the global interceptors and move them inside a function
 const setupAxiosInterceptors = () => {
-  // Remove any existing interceptors first
   axios.interceptors.request.eject(axios.interceptors.request.handlers[0]);
   axios.interceptors.response.eject(axios.interceptors.response.handlers[0]);
 
-  // Add request interceptor
 axios.interceptors.request.use(
   (config) => {
-      console.log('Request Config:', config);
-      
-      // Don't intercept login/register requests
       if (config.url.includes('/login') || config.url.includes('/register')) {
         return config;
       }
@@ -49,13 +34,7 @@ axios.interceptors.request.use(
     const token = localStorage.getItem('token');
     const userRole = localStorage.getItem('userRole');
     
-    console.log('Request Interceptor - Token:', token);
-    console.log('Request Interceptor - UserRole:', userRole);
-    console.log('Request URL:', config.url);
-    
     if (!token || !userRole) {
-      console.log('Interceptor auth check failed');
-        // Don't call handleAuthError here
       return Promise.reject(new Error('No authentication token'));
     }
     
@@ -63,7 +42,6 @@ axios.interceptors.request.use(
     return config;
   },
   (error) => {
-    console.log('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -72,11 +50,6 @@ axios.interceptors.request.use(
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.log('Response interceptor error:', error);
-    console.log('Response status:', error.response?.status);
-    console.log('Response data:', error.response?.data);
-    
-      // Don't handle auth errors in interceptor
     return Promise.reject(error);
   }
 );
@@ -275,7 +248,6 @@ export default function Requestss() {
       const userRole = localStorage.getItem('userRole');
 
       if (!token || !userRole || userRole !== 'client') {
-        console.log('fetchRequests auth check failed');
         toast.error('Authentication required for this action');
         return;
       }
@@ -423,11 +395,7 @@ export default function Requestss() {
     const token = localStorage.getItem('token');
     const userRole = localStorage.getItem('userRole');
 
-    console.log('Initial mount - Token:', token);
-    console.log('Initial mount - User Role:', userRole);
-
     if (!token || !userRole || userRole !== 'client') {
-      console.log('Initial auth check failed:', { token, userRole });
       toast.error('Authentication required');
       return;
     }

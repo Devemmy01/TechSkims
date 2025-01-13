@@ -33,6 +33,9 @@ export default function EmailVerification() {
         case 'client':
           navigate("/client-dashboard");
           break;
+        case 'technician':
+          navigate("/technician-dashboard");
+          break;
         case 'admin':
           navigate("/admin/dashboard");
           break;
@@ -72,6 +75,9 @@ export default function EmailVerification() {
             switch(userRole?.toLowerCase()) {
               case 'client':
                 navigate("/client-dashboard");
+                break;
+              case 'technician':
+                navigate("/technician-dashboard");
                 break;
               case 'admin':
                 navigate("/admin/dashboard");

@@ -19,14 +19,12 @@ const Gallery = () => {
           "https://beta.techskims.tech/api/services"
         );
         const servicesData = await servicesResponse.json();
-        console.log("Services Data:", servicesData); // Debugging API response
 
         // Fetch gallery
         const galleryResponse = await fetch(
           "https://beta.techskims.tech/api/gallery"
         );
         const galleryData = await galleryResponse.json();
-        console.log("Gallery Data:", galleryData); // Debugging API response
 
         // Validate servicesData structure
         if (

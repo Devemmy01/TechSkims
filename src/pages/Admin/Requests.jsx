@@ -1,25 +1,26 @@
 import React, { useState, useEffect } from "react";
-import { 
-  FileText, 
-  ChevronLeft, 
-  ChevronRight, 
-  Check, 
-  X, 
-  Filter, 
+import {
+  FileText,
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  X,
+  Filter,
   Search,
   Download,
   Edit as EditIcon,
   Eye,
-  Image
+  Image,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import { useNavigate } from 'react-router-dom';
-import logo from '@/assets/techskims3.png';
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+import { useNavigate } from "react-router-dom";
+import logo from "@/assets/techskims3.png";
+import { UserPlus2 } from "lucide-react";
 
-const BASE_URL = 'https://beta.techskims.tech/api';
+const BASE_URL = "https://beta.techskims.tech/api";
 
 export default function Requests() {
   const navigate = useNavigate();
@@ -47,6 +48,11 @@ export default function Requests() {
     deliveryInstructions: "",
   });
 
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [technicians, setTechnicians] = useState([]);
+
+  const [selectedTechnician, setSelectedTechnician] = useState(null);
+
   const itemsPerPage = 5;
 
   // Add new state for success modal
@@ -58,21 +64,21 @@ export default function Requests() {
 
   // Check authentication
   const checkAuth = () => {
-    const token = localStorage.getItem('token');
-    const userRole = localStorage.getItem('userRole');
-    
+    const token = localStorage.getItem("token");
+    const userRole = localStorage.getItem("userRole");
+
     if (!token) {
-      toast.error('Please login to access this page');
-      navigate('/login');
+      toast.error("Please login to access this page");
+      navigate("/login");
       return false;
     }
-    
-    if (userRole !== 'admin') {
+
+    if (userRole !== "admin") {
       toast.error("You don't have permission to access this page");
-      navigate('/login');
+      navigate("/login");
       return false;
     }
-    
+
     return true;
   };
 
@@ -84,48 +90,146 @@ export default function Requests() {
     }
   }, []);
 
+  useEffect(() => {
+    const fetchTechnicians = async () => {
+      const authToken = localStorage.getItem("authToken");
+      if (!authToken) {
+        console.error("No auth token found");
+        return;
+      }
+
+      try {
+        const response = await axios.get(
+          "https://beta.techskims.tech/api/admin/technicians",
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+              Accept: "application/json",
+            },
+          }
+        );
+        const techniciansData = response.data.data.map((item) => item.user);
+        setTechnicians(techniciansData);
+      } catch (error) {
+        console.error("Error fetching technicians:", error);
+      }
+    };
+
+    fetchTechnicians();
+  }, []);
+
+  // ... (previous imports and code remain the same)
+
+  const assignTask = async () => {
+    const authToken = localStorage.getItem("authToken");
+    if (!authToken) {
+      console.error("No auth token found");
+      toast.error("Authentication token not found");
+      return;
+    }
+
+    if (!selectedTechnician || !selectedRequest) {
+      console.error("Technician or request not selected");
+      toast.error("Please select a technician");
+      return;
+    }
+
+    // Format time to HH:mm format
+    const formatTimeToHi = (time) => {
+      if (!time) return "";
+      const [hours, minutes] = time.split(":");
+      return `${hours}:${minutes}`;
+    };
+
+    try {
+      const response = await axios.post(
+        "https://beta.techskims.tech/api/admin/tasks",
+        {
+          technician: selectedTechnician.name,
+          technicianId: selectedTechnician.id,
+          requestId: selectedRequest.id,
+          adminPayType:
+            selectedRequest.adminPayType || selectedRequest.payType || "hourly",
+          adminRate: selectedRequest.adminRate || selectedRequest.rate || 0,
+          technicianPayType: "hourly", // Default to hourly
+          technicianRate: selectedRequest.rate || 0, // Use request rate as technician rate
+          deliverables:
+            selectedRequest.deliverables || "Standard service delivery",
+          endDate: selectedRequest.endDate || selectedRequest.startDate, // Use start date if end date not specified
+          specialTools: selectedRequest.specialTools || "None required",
+          startDate:
+            selectedRequest.startDate || new Date().toISOString().split("T")[0],
+          startTime: formatTimeToHi(selectedRequest.startTime) || "09:00",
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      toast.success("Task assigned successfully");
+      setShowAssignModal(false);
+      fetchRequests(); // Refresh the requests list
+    } catch (error) {
+      console.error("Error assigning task:", error);
+
+      // Handle validation errors
+      if (error.response?.status === 422) {
+        const errorMessages = error.response.data.error_message;
+        if (errorMessages) {
+          // Display the first validation error message
+          const firstError = Object.values(errorMessages)[0];
+          toast.error(Array.isArray(firstError) ? firstError[0] : firstError);
+        } else {
+          toast.error("Please fill in all required fields");
+        }
+      } else {
+        toast.error(error.response?.data?.message || "Failed to assign task");
+      }
+    }
+  };
+
+  // ... (rest of the code remains the same)
+
   // Fetch requests with auth check
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('authToken');
-
-      console.log('Fetching requests with token:', token); // Debug log
+      const token = localStorage.getItem("authToken");
 
       const response = await axios.get(`${BASE_URL}/admin/requests`, {
         headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       });
 
-      // Add detailed logging
-      console.log('API Response:', response);
-      console.log('Response Data:', response.data);
-      console.log('Requests Array:', response.data.data);
-
       if (response.data && response.data.data) {
-        const formattedRequests = response.data.data.map(request => ({
+        const formattedRequests = response.data.data.map((request) => ({
           ...request,
-          status: request.status?.toLowerCase() || 'pending'
+          status: request.status?.toLowerCase() || "pending",
         }));
-        console.log('Formatted Requests:', formattedRequests); // Debug log
         setRequests(formattedRequests);
       } else {
         setRequests([]);
       }
     } catch (error) {
-      console.error('Error fetching requests:', error);
+      console.error("Error fetching requests:", error);
       if (error.response) {
-        console.error('Error Response:', error.response.data);
-        console.error('Error Status:', error.response.status);
+        console.error("Error Response:", error.response.data);
+        console.error("Error Status:", error.response.status);
       }
       if (error.response?.status === 401) {
-        toast.error('Session expired. Please login again.');
-        localStorage.removeItem('token');
-        navigate('/login');
+        toast.error("Session expired. Please login again.");
+        localStorage.removeItem("token");
+        navigate("/login");
       } else {
-        toast.error(error.response?.data?.message || 'Failed to fetch requests');
+        toast.error(
+          error.response?.data?.message || "Failed to fetch requests"
+        );
       }
       setRequests([]);
     } finally {
@@ -137,9 +241,12 @@ export default function Requests() {
   const formatTimeToHi = (time) => {
     if (!time) {
       const now = new Date();
-      return `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+      return `${now.getHours()}:${now
+        .getMinutes()
+        .toString()
+        .padStart(2, "0")}`;
     }
-    const [hours, minutes] = time.split(':');
+    const [hours, minutes] = time.split(":");
     return `${hours}:${minutes}`;
   };
 
@@ -149,145 +256,145 @@ export default function Requests() {
     if (!checkAuth()) return;
 
     try {
-      const token = localStorage.getItem('token');
-      
-      const formattedTime = editFormData.startTime ? formatTimeToHi(editFormData.startTime) : '';
-      
+      const token = localStorage.getItem("token");
+
+      const formattedTime = editFormData.startTime
+        ? formatTimeToHi(editFormData.startTime)
+        : "";
+
       const data = new FormData();
-      
+
       if (editFormData.status) {
-        data.append('status', editFormData.status);
+        data.append("status", editFormData.status);
       }
-      
+
       if (editFormData.startDate) {
-        data.append('startDate', editFormData.startDate);
+        data.append("startDate", editFormData.startDate);
       }
       if (editFormData.endDate) {
-        data.append('endDate', editFormData.endDate);
+        data.append("endDate", editFormData.endDate);
       }
       if (formattedTime) {
-        data.append('startTime', formattedTime);
+        data.append("startTime", formattedTime);
       }
       if (editFormData.specialTools) {
-        data.append('specialTools', editFormData.specialTools);
+        data.append("specialTools", editFormData.specialTools);
       }
       if (editFormData.adminPayType) {
-        data.append('adminPayType', editFormData.adminPayType);
+        data.append("adminPayType", editFormData.adminPayType);
       }
       if (editFormData.adminRate) {
-        data.append('adminRate', editFormData.adminRate);
+        data.append("adminRate", editFormData.adminRate);
       }
       if (editFormData.deliverables) {
-        data.append('deliverables', editFormData.deliverables);
+        data.append("deliverables", editFormData.deliverables);
       }
       if (editFormData.deliveryInstructions) {
-        data.append('deliveryInstructions', editFormData.deliveryInstructions);
+        data.append("deliveryInstructions", editFormData.deliveryInstructions);
       }
-      
-      data.append('_method', 'PUT');
+
+      data.append("_method", "PUT");
 
       const response = await axios.post(
         `${BASE_URL}/admin/requests/${selectedRequest.id}`,
         data,
         {
           headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
-      if (response.data.status === 'success') {
-        toast.success('Request updated successfully');
+      if (response.data.status === "success") {
+        toast.success("Request updated successfully");
         setShowEditModal(false);
         setUpdatedRequest(response.data.data);
         setShowSuccessModal(true);
         fetchRequests();
       }
     } catch (error) {
-      console.error('Error updating request:', error);
-      console.error('Error response:', error.response?.data);
-      
+      console.error("Error updating request:", error);
+      console.error("Error response:", error.response?.data);
+
       if (error.response?.status === 401) {
-        toast.error('Session expired. Please login again.');
-        localStorage.removeItem('token');
-        localStorage.removeItem('userRole');
-        navigate('/login');
+        toast.error("Session expired. Please login again.");
+        localStorage.removeItem("token");
+        localStorage.removeItem("userRole");
+        navigate("/login");
       } else if (error.response?.data?.message) {
         toast.error(error.response.data.message);
       } else {
-        toast.error('Failed to update request. Please check all fields are filled correctly.');
+        toast.error(
+          "Failed to update request. Please check all fields are filled correctly."
+        );
       }
     }
   };
 
   // Modify the generatePDF function to handle image loading
   const generatePDF = async (request) => {
-    // Debug logging
-    console.log('Generating PDF for request:', request);
-    console.log('Deliverables:', request.deliverables);
-    console.log('Images:', request.request_images || request.images);
-
     const doc = new jsPDF();
-    
+
     // Add TechSkims logo using the imported image
-    doc.addImage(
-      logo,
-      'PNG',
-      10,
-      10,
-      60,
-      50
-    );
-    
+    doc.addImage(logo, "PNG", 10, 10, 60, 50);
+
     // Add title with adjusted position to accommodate logo and margin
     doc.setFontSize(20);
-    doc.text('Request Details', 105, 70, { align: 'center' });
-    
+    doc.text("Request Details", 105, 70, { align: "center" });
+
     let yPos = 80;
 
     // Add request information
     doc.setFontSize(12);
-    
+
     // Section headers style
     const sectionHeaderStyle = {
       fillColor: [41, 128, 185],
       textColor: 255,
-      fontStyle: 'bold',
-      fontSize: 12
+      fontStyle: "bold",
+      fontSize: 12,
     };
 
     // Regular row style
     const regularStyle = {
       fontSize: 10,
       cellPadding: 4,
-      cellWidth: 'wrap',
+      cellWidth: "wrap",
       lineWidth: 0.1,
-      lineColor: [80, 80, 80]
+      lineColor: [80, 80, 80],
     };
 
     // Client Information Section
     doc.autoTable({
       startY: yPos,
-      head: [[{ content: 'Client Information', colSpan: 2, styles: sectionHeaderStyle }]],
-      body: [
-        ['Client', request.client || ''],
-        ['Service', request.service || ''],
-        ['Technician Title', request.technicianTitle || ''],
-        ['Location', request.location || ''],
-        ['Contact No', request.contactNo || ''],
-        ['Pay Type', request.payType || ''],
-        ['Rate', request.rate || ''],
-        ['Pickup Location', request.pickupLocation || ''],
-        ['Description', request.description || '']
+      head: [
+        [
+          {
+            content: "Client Information",
+            colSpan: 2,
+            styles: sectionHeaderStyle,
+          },
+        ],
       ],
-      theme: 'grid',
+      body: [
+        ["Client", request.client || ""],
+        ["Service", request.service || ""],
+        ["Technician Title", request.technicianTitle || ""],
+        ["Location", request.location || ""],
+        ["Contact No", request.contactNo || ""],
+        ["Pay Type", request.payType || ""],
+        ["Rate", request.rate || ""],
+        ["Pickup Location", request.pickupLocation || ""],
+        ["Description", request.description || ""],
+      ],
+      theme: "grid",
       styles: regularStyle,
       columnStyles: {
-        0: { fontStyle: 'bold', cellWidth: 60 },
-        1: { cellWidth: 130 }
+        0: { fontStyle: "bold", cellWidth: 60 },
+        1: { cellWidth: 130 },
       },
-      margin: { left: 10 }
+      margin: { left: 10 },
     });
 
     yPos = doc.lastAutoTable.finalY + 10;
@@ -296,20 +403,20 @@ export default function Requests() {
     const images = request.request_images || request.images || [];
     if (images && images.length > 0) {
       doc.setFontSize(12);
-      doc.setFont(undefined, 'bold');
-      doc.text('Request Images', 10, yPos);
-      
+      doc.setFont(undefined, "bold");
+      doc.text("Request Images", 10, yPos);
+
       yPos += 10;
 
       // Load and add each image
       for (let i = 0; i < images.length; i++) {
         try {
           const imageUrl = images[i].image || images[i].url || images[i];
-          
+
           // Fetch the image
           const response = await fetch(imageUrl);
           const blob = await response.blob();
-          
+
           // Convert blob to base64
           const reader = new FileReader();
           const base64data = await new Promise((resolve) => {
@@ -324,13 +431,13 @@ export default function Requests() {
           // Add image to PDF
           doc.addImage(
             base64data,
-            'JPEG',
+            "JPEG",
             10,
             yPos,
             imgWidth,
             imgHeight,
             `img${i}`,
-            'MEDIUM'
+            "MEDIUM"
           );
 
           yPos += imgHeight + 10; // Add spacing after each image
@@ -338,36 +445,38 @@ export default function Requests() {
           console.error(`Error loading image ${i}:`, error);
           // If image fails to load, add a placeholder text
           doc.setFontSize(10);
-          doc.setFont(undefined, 'normal');
+          doc.setFont(undefined, "normal");
           doc.text(`Image ${i + 1} could not be loaded`, 10, yPos);
           yPos += 10;
         }
       }
-      
+
       yPos += 10; // Add some spacing before next section
     }
 
     // Admin Settings Section
     doc.autoTable({
       startY: yPos,
-      head: [[{ content: 'Admin Settings', colSpan: 2, styles: sectionHeaderStyle }]],
-      body: [
-        ['Start Date', request.startDate || ''],
-        ['End Date', request.endDate || ''],
-        ['Start Time', request.startTime || ''],
-        ['Special Tools', request.specialTools || ''],
-        ['Admin Pay Type', request.adminPayType || request.payType || ''],
-        ['Admin Rate', request.adminRate || request.rate || ''],
-        ['Deliverables', request.deliverables || ''],
-        ['Delivery Instructions', request.deliveryInstructions || '']
+      head: [
+        [{ content: "Admin Settings", colSpan: 2, styles: sectionHeaderStyle }],
       ],
-      theme: 'grid',
+      body: [
+        ["Start Date", request.startDate || ""],
+        ["End Date", request.endDate || ""],
+        ["Start Time", request.startTime || ""],
+        ["Special Tools", request.specialTools || ""],
+        ["Admin Pay Type", request.adminPayType || request.payType || ""],
+        ["Admin Rate", request.adminRate || request.rate || ""],
+        ["Deliverables", request.deliverables || ""],
+        ["Delivery Instructions", request.deliveryInstructions || ""],
+      ],
+      theme: "grid",
       styles: regularStyle,
       columnStyles: {
-        0: { fontStyle: 'bold', cellWidth: 60 },
-        1: { cellWidth: 130 }
+        0: { fontStyle: "bold", cellWidth: 60 },
+        1: { cellWidth: 130 },
       },
-      margin: { left: 10 }
+      margin: { left: 10 },
     });
 
     // Add footer with date
@@ -375,7 +484,12 @@ export default function Requests() {
     doc.setFontSize(10);
     doc.setTextColor(128);
     doc.text(`Generated on: ${date}`, 10, doc.internal.pageSize.height - 10);
-    doc.text(`Request ID: ${request.id}`, doc.internal.pageSize.width - 10, doc.internal.pageSize.height - 10, { align: 'right' });
+    doc.text(
+      `Request ID: ${request.id}`,
+      doc.internal.pageSize.width - 10,
+      doc.internal.pageSize.height - 10,
+      { align: "right" }
+    );
 
     // Save the PDF
     doc.save(`request-${request.id}.pdf`);
@@ -395,22 +509,18 @@ export default function Requests() {
 
   // Filter requests based on search and status
   const filteredRequests = requests.filter((request) => {
-    console.log('Filtering request:', request); // Debug log
-    
     const matchesSearch =
-      request.technicianTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.technicianTitle
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
       request.client?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.location?.toLowerCase().includes(searchTerm.toLowerCase());
-
-    console.log('Matches search:', matchesSearch); // Debug log
 
     if (!matchesSearch) return false;
 
     if (status === "all") return true;
     return request.status?.toLowerCase() === status.toLowerCase();
   });
-
-  console.log('Filtered Requests:', filteredRequests); // Debug log
 
   // Pagination logic
   const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
@@ -419,44 +529,44 @@ export default function Requests() {
     currentPage * itemsPerPage
   );
 
-  console.log('Paginated Requests:', paginatedRequests); // Debug log
-
   // Modify the handleCompleteRequest function to use the existing update endpoint
   const handleCompleteRequest = async (requestId) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
-        toast.error('Authentication required');
+        toast.error("Authentication required");
         return;
       }
 
       // Create FormData for the update
       const data = new FormData();
-      data.append('status', 'completed');
-      data.append('_method', 'PUT');
+      data.append("status", "completed");
+      data.append("_method", "PUT");
 
       const response = await axios.post(
         `${BASE_URL}/admin/requests/${requestId}`,
         data,
         {
           headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
-      if (response.data.status === 'success') {
-        toast.success('Request marked as completed');
+      if (response.data.status === "success") {
+        toast.success("Request marked as completed");
         fetchRequests(); // Refresh the requests list
       }
     } catch (error) {
-      console.error('Error completing request:', error);
+      console.error("Error completing request:", error);
       if (error.response?.status === 401) {
-        toast.error('Session expired. Please login again.');
-        navigate('/login');
+        toast.error("Session expired. Please login again.");
+        navigate("/login");
       } else {
-        toast.error(error.response?.data?.message || 'Failed to complete request');
+        toast.error(
+          error.response?.data?.message || "Failed to complete request"
+        );
       }
     }
   };
@@ -464,80 +574,91 @@ export default function Requests() {
   // Modify the handleStatusChange function
   const handleStatusChange = async (requestId, newStatus) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
-        toast.error('Authentication required');
+        toast.error("Authentication required");
         return;
       }
 
       // Find the current request data
-      const currentRequest = requests.find(req => req.id === requestId);
-      
+      const currentRequest = requests.find((req) => req.id === requestId);
+
       // Get today's date in YYYY-MM-DD format
-      const today = new Date().toISOString().split('T')[0];
-      
+      const today = new Date().toISOString().split("T")[0];
+
       const data = new FormData();
       // Add all required fields with proper formatting
-      data.append('status', newStatus);
-      data.append('startDate', currentRequest.startDate || today);
-      data.append('startTime', formatTimeToHi(currentRequest.startTime));
-      data.append('specialTools', currentRequest.specialTools || 'None');
-      data.append('deliveryInstructions', currentRequest.deliveryInstructions || 'None');
-      data.append('_method', 'PUT');
+      data.append("status", newStatus);
+      data.append("startDate", currentRequest.startDate || today);
+      data.append("startTime", formatTimeToHi(currentRequest.startTime));
+      data.append("specialTools", currentRequest.specialTools || "None");
+      data.append(
+        "deliveryInstructions",
+        currentRequest.deliveryInstructions || "None"
+      );
+      data.append("_method", "PUT");
 
       const response = await axios.post(
         `${BASE_URL}/admin/requests/${requestId}`,
         data,
         {
           headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
-      if (response.data.status === 'success') {
+      if (response.data.status === "success") {
         toast.success(`Request marked as ${newStatus}`);
         fetchRequests();
       }
     } catch (error) {
-      console.error('Error updating status:', error);
-      
+      console.error("Error updating status:", error);
+
       // Handle validation errors
       if (error.response?.status === 422) {
         const errorMessages = error.response.data.error_message;
-        
+
         // Format validation error messages
         if (errorMessages) {
           Object.entries(errorMessages).forEach(([field, messages]) => {
             const message = Array.isArray(messages) ? messages[0] : messages;
             switch (field) {
-              case 'startDate':
-                toast.error('Start date must not be in the past. Please update the request details first.');
+              case "startDate":
+                toast.error(
+                  "Start date must not be in the past. Please update the request details first."
+                );
                 break;
-              case 'startTime':
-                toast.error('Invalid time format. Please update the request details first.');
+              case "startTime":
+                toast.error(
+                  "Invalid time format. Please update the request details first."
+                );
                 break;
-              case 'specialTools':
-                toast.error('Special tools information is required. Please update the request details first.');
+              case "specialTools":
+                toast.error(
+                  "Special tools information is required. Please update the request details first."
+                );
                 break;
-              case 'deliveryInstructions':
-                toast.error('Delivery instructions are required. Please update the request details first.');
+              case "deliveryInstructions":
+                toast.error(
+                  "Delivery instructions are required. Please update the request details first."
+                );
                 break;
               default:
                 toast.error(message);
             }
           });
         } else {
-          toast.error('Please ensure all required fields are properly filled');
+          toast.error("Please ensure all required fields are properly filled");
         }
       } else if (error.response?.status === 401) {
-        toast.error('Session expired. Please login again.');
-        navigate('/login');
+        toast.error("Session expired. Please login again.");
+        navigate("/login");
       } else {
         toast.error(
-          error.response?.data?.message || 
-          'Failed to update status. Please try again later.'
+          error.response?.data?.message ||
+            "Failed to update status. Please try again later."
         );
       }
     }
@@ -557,8 +678,12 @@ export default function Requests() {
           <div className="mx-auto rounded-lg bg-[#F8F8F8] w-full shadow-sm">
             {/* Header */}
             <div className="mb-6">
-              <h1 className="text-xl font-semibold text-gray-900">Client Requests</h1>
-              <p className="text-sm text-gray-500">Manage client requests here.</p>
+              <h1 className="text-xl font-semibold text-gray-900">
+                Client Requests
+              </h1>
+              <p className="text-sm text-gray-500">
+                Manage client requests here.
+              </p>
             </div>
 
             {/* Filters and Search */}
@@ -619,37 +744,61 @@ export default function Requests() {
                 <thead>
                   <tr className="border-b text-sm text-black uppercase bg-gray-50">
                     <th className="px-6 py-4 font-bold text-left w-16">ID</th>
-                    <th className="px-6 py-4 font-bold text-left">Technician Title</th>
+                    <th className="px-6 py-4 font-bold text-left">
+                      Technician Title
+                    </th>
                     <th className="px-6 py-4 font-bold text-left">Service</th>
-                    <th className="px-6 py-4 font-bold text-left w-32">Contact</th>
-                    <th className="px-6 py-4 font-bold text-left w-48">Schedule</th>
+                    <th className="px-6 py-4 font-bold text-left w-32">
+                      Contact
+                    </th>
+                    <th className="px-6 py-4 font-bold text-left w-48">
+                      Schedule
+                    </th>
                     <th className="px-6 py-4 font-bold text-left">Status</th>
-                    <th className="px-6 py-4 font-bold text-center w-28">Actions</th>
+                    <th className="px-6 py-4 font-bold text-center w-28">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {paginatedRequests.length > 0 ? (
                     paginatedRequests.map((request) => (
-                      <tr key={request.id} className="border-b text-sm hover:bg-gray-50">
+                      <tr
+                        key={request.id}
+                        className="border-b text-sm hover:bg-gray-50"
+                      >
                         <td className="px-6 py-4 text-left">{request.id}</td>
-                        <td className="px-6 py-4 text-left font-medium text-gray-900">{request.technicianTitle}</td>
-                        <td className="px-6 py-4 text-left">{request.service}</td>
-                        <td className="px-6 py-4 text-left">{request.contactNo}</td>
+                        <td className="px-6 py-4 text-left font-medium text-gray-900">
+                          {request.technicianTitle}
+                        </td>
+                        <td className="px-6 py-4 text-left">
+                          {request.service}
+                        </td>
+                        <td className="px-6 py-4 text-left">
+                          {request.contactNo}
+                        </td>
                         <td className="px-6 py-4 text-left">
                           <div>
-                            <div className="text-gray-900">{request.startDate}</div>
-                            <div className="text-gray-500 text-xs">{request.startTime}</div>
+                            <div className="text-gray-900">
+                              {request.startDate}
+                            </div>
+                            <div className="text-gray-500 text-xs">
+                              {request.startTime}
+                            </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-left">
                           <select
-                            value={request.status || 'pending'}
-                            onChange={(e) => handleStatusChange(request.id, e.target.value)}
-                            className={`px-2 py-1 rounded-md text-sm border-none outline-none appearance-none -webkit-appearance-none text-center w-fit ${
-                              request.status === 'completed' ? 'bg-green-100 text-green-500 font-semibold' :
-                              request.status === 'ongoing' ? 'bg-blue-100 font-semibold text-blue-500' :
-                              request.status === 'pending' ? 'bg-[#ffa85633] text-[#FFA756] font-semibold' :
-                              'bg-gray-100 text-gray-600'
+                            value={request.status || "pending"}
+                            onChange={(e) =>
+                              handleStatusChange(request.id, e.target.value)
+                            }
+                            className={`px-1 py-1 rounded-md text-[14px] capitalize border-none outline-none appearance-none -webkit-appearance-none text-center w-fit ${
+                              request.status === "completed"
+                                ? "bg-green-100 text-green-500"
+                                : request.status === "ongoing"
+                                ? "bg-blue-100 text-blue-500"
+                                : "bg-yellow-100 text-yellow-600"
                             }`}
                           >
                             <option value="pending">Pending</option>
@@ -659,15 +808,17 @@ export default function Requests() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-center gap-2">
-                            <button 
+                            <button
                               onClick={() => {
                                 setSelectedRequest(request);
                                 setEditFormData({
                                   ...request,
-                                  adminPayType: request.adminPayType || request.payType,
+                                  adminPayType:
+                                    request.adminPayType || request.payType,
                                   adminRate: request.adminRate || request.rate,
-                                  deliverables: request.deliverables || '',
-                                  deliveryInstructions: request.deliveryInstructions || '',
+                                  deliverables: request.deliverables || "",
+                                  deliveryInstructions:
+                                    request.deliveryInstructions || "",
                                 });
                                 setShowEditModal(true);
                               }}
@@ -677,12 +828,23 @@ export default function Requests() {
                               <EditIcon className="h-4 w-4" />
                             </button>
 
-                            <button 
+                            <button
                               onClick={() => generatePDF(request)}
                               className="rounded-full p-2 text-gray-500 hover:bg-gray-50"
                               title="Download PDF"
                             >
                               <Download className="h-4 w-4" />
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setSelectedRequest(request);
+                                setShowAssignModal(true);
+                              }}
+                              className="rounded-full p-2 text-green-500 hover:bg-green-50"
+                              title="Assign Task"
+                            >
+                              <UserPlus2 className="h-4 w-4" />
                             </button>
                           </div>
                         </td>
@@ -690,7 +852,10 @@ export default function Requests() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="7" className="px-6 py-4 whitespace-nowrap text-center text-gray-500">
+                      <td
+                        colSpan="7"
+                        className="px-6 py-4 whitespace-nowrap text-center text-gray-500"
+                      >
                         No requests found
                       </td>
                     </tr>
@@ -704,21 +869,38 @@ export default function Requests() {
               <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-b-lg">
                 <div>
                   <p className="text-sm text-gray-700">
-                    Showing <span className="font-medium">{((currentPage - 1) * itemsPerPage) + 1}</span> to{' '}
+                    Showing{" "}
                     <span className="font-medium">
-                      {Math.min(currentPage * itemsPerPage, filteredRequests.length)}
-                    </span>{' '}
-                    of <span className="font-medium">{filteredRequests.length}</span> results
+                      {(currentPage - 1) * itemsPerPage + 1}
+                    </span>{" "}
+                    to{" "}
+                    <span className="font-medium">
+                      {Math.min(
+                        currentPage * itemsPerPage,
+                        filteredRequests.length
+                      )}
+                    </span>{" "}
+                    of{" "}
+                    <span className="font-medium">
+                      {filteredRequests.length}
+                    </span>{" "}
+                    results
                   </p>
                 </div>
                 <div className="flex">
                   <button
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(prev - 1, 1))
+                    }
                     disabled={currentPage === 1}
                     className="relative inline-flex items-center rounded-l-md bg-white px-2 py-2 text-gray-400 border-l border-t border-b border-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
                   >
                     <span className="sr-only">Previous</span>
-                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <svg
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
                       <path
                         fillRule="evenodd"
                         d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
@@ -727,12 +909,18 @@ export default function Requests() {
                     </svg>
                   </button>
                   <button
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                    }
                     disabled={currentPage === totalPages}
                     className="relative inline-flex items-center rounded-r-md bg-white px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
                   >
                     <span className="sr-only">Next</span>
-                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <svg
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
                       <path
                         fillRule="evenodd"
                         d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
@@ -750,12 +938,15 @@ export default function Requests() {
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
                 <h2 className="text-xl font-semibold mb-4">Request Details</h2>
-                
+
                 {/* Add Images Section */}
                 <div className="mb-6">
-                  <label className="text-base font-medium text-[#606060] block mb-2">Request Images</label>
+                  <label className="text-base font-medium text-[#606060] block mb-2">
+                    Request Images
+                  </label>
                   <div className="grid grid-cols-3 gap-4">
-                    {selectedRequest.images && selectedRequest.images.length > 0 ? (
+                    {selectedRequest.images &&
+                    selectedRequest.images.length > 0 ? (
                       selectedRequest.images.map((image, index) => (
                         <div key={index} className="relative aspect-square">
                           <img
@@ -764,7 +955,8 @@ export default function Requests() {
                             className="rounded-lg object-cover w-full h-full"
                             onError={(e) => {
                               e.target.onerror = null;
-                              e.target.src = 'https://via.placeholder.com/200?text=Error';
+                              e.target.src =
+                                "https://via.placeholder.com/200?text=Error";
                             }}
                           />
                         </div>
@@ -773,7 +965,9 @@ export default function Requests() {
                       <div className="flex items-center justify-center aspect-square bg-gray-100 rounded-lg">
                         <div className="text-center">
                           <Image className="h-8 w-8 text-gray-400 mx-auto" />
-                          <p className="text-sm text-gray-500 mt-2">No images</p>
+                          <p className="text-sm text-gray-500 mt-2">
+                            No images
+                          </p>
                         </div>
                       </div>
                     )}
@@ -782,36 +976,68 @@ export default function Requests() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-base font-medium text-[#606060]">Client Name</label>
-                    <p className="font-medium text-gray-400 bg-[#F5F6FA] border border-[#D5D5D5] p-3 rounded-md px-4">{selectedRequest.technicianTitle}</p>
+                    <label className="text-base font-medium text-[#606060]">
+                      Client Name
+                    </label>
+                    <p className="font-medium text-gray-400 bg-[#F5F6FA] border border-[#D5D5D5] p-3 rounded-md px-4">
+                      {selectedRequest.technicianTitle}
+                    </p>
                   </div>
                   <div>
-                    <label className="text-base font-medium text-[#606060]">Location</label>
-                    <p className="font-medium text-gray-400 bg-[#F5F6FA] border border-[#D5D5D5] p-3 rounded-md px-4">{selectedRequest.location}</p>
+                    <label className="text-base font-medium text-[#606060]">
+                      Location
+                    </label>
+                    <p className="font-medium text-gray-400 bg-[#F5F6FA] border border-[#D5D5D5] p-3 rounded-md px-4">
+                      {selectedRequest.location}
+                    </p>
                   </div>
                   <div>
-                    <label className="text-base font-medium text-[#606060]">Contact Number</label>
-                    <p className="font-medium text-gray-400 bg-[#F5F6FA] border border-[#D5D5D5] p-3 rounded-md px-4">{selectedRequest.contactNo}</p>
+                    <label className="text-base font-medium text-[#606060]">
+                      Contact Number
+                    </label>
+                    <p className="font-medium text-gray-400 bg-[#F5F6FA] border border-[#D5D5D5] p-3 rounded-md px-4">
+                      {selectedRequest.contactNo}
+                    </p>
                   </div>
                   <div>
-                    <label className="text-base font-medium text-[#606060]">Start Date & Time</label>
-                    <p className="font-medium text-gray-400 bg-[#F5F6FA] border border-[#D5D5D5] p-3 rounded-md px-4">{selectedRequest.startDate} {selectedRequest.startTime}</p>
+                    <label className="text-base font-medium text-[#606060]">
+                      Start Date & Time
+                    </label>
+                    <p className="font-medium text-gray-400 bg-[#F5F6FA] border border-[#D5D5D5] p-3 rounded-md px-4">
+                      {selectedRequest.startDate} {selectedRequest.startTime}
+                    </p>
                   </div>
                   <div>
-                    <label className="text-base font-medium text-[#606060]">Description</label>
-                    <p className="font-medium text-gray-400 bg-[#F5F6FA] border border-[#D5D5D5] p-3 rounded-md px-4">{selectedRequest.description}</p>
+                    <label className="text-base font-medium text-[#606060]">
+                      Description
+                    </label>
+                    <p className="font-medium text-gray-400 bg-[#F5F6FA] border border-[#D5D5D5] p-3 rounded-md px-4">
+                      {selectedRequest.description}
+                    </p>
                   </div>
                   <div>
-                    <label className="text-base font-medium text-[#606060]">Special Tools</label>
-                    <p className="font-medium text-gray-400 bg-[#F5F6FA] border border-[#D5D5D5] p-3 rounded-md px-4">{selectedRequest.specialTools}</p>
+                    <label className="text-base font-medium text-[#606060]">
+                      Special Tools
+                    </label>
+                    <p className="font-medium text-gray-400 bg-[#F5F6FA] border border-[#D5D5D5] p-3 rounded-md px-4">
+                      {selectedRequest.specialTools}
+                    </p>
                   </div>
                   <div>
-                    <label className="text-base font-medium text-[#606060]">Pickup Location</label>
-                    <p className="font-medium text-gray-400 bg-[#F5F6FA] border border-[#D5D5D5] p-3 rounded-md px-4">{selectedRequest.pickupLocation}</p>
+                    <label className="text-base font-medium text-[#606060]">
+                      Pickup Location
+                    </label>
+                    <p className="font-medium text-gray-400 bg-[#F5F6FA] border border-[#D5D5D5] p-3 rounded-md px-4">
+                      {selectedRequest.pickupLocation}
+                    </p>
                   </div>
                   <div>
-                    <label className="text-base font-medium text-[#606060]">Payment Details</label>
-                    <p className="font-medium text-gray-400 bg-[#F5F6FA] border border-[#D5D5D5] p-3 rounded-md px-4">{selectedRequest.payType} - {selectedRequest.rate}</p>
+                    <label className="text-base font-medium text-[#606060]">
+                      Payment Details
+                    </label>
+                    <p className="font-medium text-gray-400 bg-[#F5F6FA] border border-[#D5D5D5] p-3 rounded-md px-4">
+                      {selectedRequest.payType} - {selectedRequest.rate}
+                    </p>
                   </div>
                 </div>
                 <div className="mt-6 flex justify-end gap-3">
@@ -840,13 +1066,17 @@ export default function Requests() {
                 <form onSubmit={handleUpdateRequest} className="grid gap-4">
                   {/* Client Information Section - Read Only */}
                   <div className="border-b pb-4">
-                    <h3 className="text-md font-medium text-gray-700 mb-3">Client Information</h3>
+                    <h3 className="text-md font-medium text-gray-700 mb-3">
+                      Client Information
+                    </h3>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-sm text-gray-500">Client Name</label>
+                        <label className="text-sm text-gray-500">
+                          Client Name
+                        </label>
                         <input
                           type="text"
-                          value={selectedRequest.client || 'N/A'}
+                          value={selectedRequest.client || "N/A"}
                           readOnly
                           className="w-full mt-1 rounded-md border border-gray-200 bg-gray-50 p-2 text-gray-600"
                         />
@@ -861,7 +1091,9 @@ export default function Requests() {
                         />
                       </div>
                       <div>
-                        <label className="text-sm text-gray-500">Technician Title</label>
+                        <label className="text-sm text-gray-500">
+                          Technician Title
+                        </label>
                         <input
                           type="text"
                           value={selectedRequest.technicianTitle}
@@ -870,7 +1102,9 @@ export default function Requests() {
                         />
                       </div>
                       <div>
-                        <label className="text-sm text-gray-500">Location</label>
+                        <label className="text-sm text-gray-500">
+                          Location
+                        </label>
                         <input
                           type="text"
                           value={selectedRequest.location}
@@ -879,7 +1113,9 @@ export default function Requests() {
                         />
                       </div>
                       <div>
-                        <label className="text-sm text-gray-500">Contact Number</label>
+                        <label className="text-sm text-gray-500">
+                          Contact Number
+                        </label>
                         <input
                           type="text"
                           value={selectedRequest.contactNo}
@@ -888,7 +1124,9 @@ export default function Requests() {
                         />
                       </div>
                       <div>
-                        <label className="text-sm text-gray-500">Client Pay Type</label>
+                        <label className="text-sm text-gray-500">
+                          Client Pay Type
+                        </label>
                         <input
                           type="text"
                           value={selectedRequest.payType}
@@ -897,7 +1135,9 @@ export default function Requests() {
                         />
                       </div>
                       <div>
-                        <label className="text-sm text-gray-500">Client Rate</label>
+                        <label className="text-sm text-gray-500">
+                          Client Rate
+                        </label>
                         <input
                           type="text"
                           value={selectedRequest.rate}
@@ -906,7 +1146,9 @@ export default function Requests() {
                         />
                       </div>
                       <div>
-                        <label className="text-sm text-gray-500">Pickup Location</label>
+                        <label className="text-sm text-gray-500">
+                          Pickup Location
+                        </label>
                         <input
                           type="text"
                           value={selectedRequest.pickupLocation}
@@ -916,7 +1158,9 @@ export default function Requests() {
                       </div>
                     </div>
                     <div className="mt-4">
-                      <label className="text-sm text-gray-500">Description</label>
+                      <label className="text-sm text-gray-500">
+                        Description
+                      </label>
                       <textarea
                         value={selectedRequest.description}
                         readOnly
@@ -924,12 +1168,15 @@ export default function Requests() {
                         className="w-full mt-1 rounded-md border border-gray-200 bg-gray-50 p-2 text-gray-600"
                       />
                     </div>
-                    
+
                     {/* Add Images Section */}
                     <div className="mt-4">
-                      <label className="text-sm text-gray-500">Request Images</label>
+                      <label className="text-sm text-gray-500">
+                        Request Images
+                      </label>
                       <div className="mt-2 grid grid-cols-3 gap-4">
-                        {selectedRequest.images && selectedRequest.images.length > 0 ? (
+                        {selectedRequest.images &&
+                        selectedRequest.images.length > 0 ? (
                           selectedRequest.images.map((image, index) => (
                             <div key={index} className="relative aspect-square">
                               <img
@@ -938,7 +1185,8 @@ export default function Requests() {
                                 className="rounded-lg object-cover w-full h-full"
                                 onError={(e) => {
                                   e.target.onerror = null;
-                                  e.target.src = 'https://via.placeholder.com/200?text=Error';
+                                  e.target.src =
+                                    "https://via.placeholder.com/200?text=Error";
                                 }}
                               />
                             </div>
@@ -947,7 +1195,9 @@ export default function Requests() {
                           <div className="flex items-center justify-center aspect-square bg-gray-100 rounded-lg">
                             <div className="text-center">
                               <Image className="h-8 w-8 text-gray-400 mx-auto" />
-                              <p className="text-sm text-gray-500 mt-2">No images</p>
+                              <p className="text-sm text-gray-500 mt-2">
+                                No images
+                              </p>
                             </div>
                           </div>
                         )}
@@ -957,44 +1207,74 @@ export default function Requests() {
 
                   {/* Admin Editable Section */}
                   <div className="pt-4">
-                    <h3 className="text-md font-medium text-gray-700 mb-3">Admin Settings</h3>
+                    <h3 className="text-md font-medium text-gray-700 mb-3">
+                      Admin Settings
+                    </h3>
                     <div className="grid gap-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="text-sm text-gray-500">Start Date</label>
+                          <label className="text-sm text-gray-500">
+                            Start Date
+                          </label>
                           <input
                             type="date"
                             value={editFormData.startDate}
-                            onChange={(e) => setEditFormData({...editFormData, startDate: e.target.value})}
+                            onChange={(e) =>
+                              setEditFormData({
+                                ...editFormData,
+                                startDate: e.target.value,
+                              })
+                            }
                             className="w-full mt-1 rounded-md border border-gray-200 p-2"
                           />
                         </div>
                         <div>
-                          <label className="text-sm text-gray-500">End Date</label>
+                          <label className="text-sm text-gray-500">
+                            End Date
+                          </label>
                           <input
                             type="date"
                             value={editFormData.endDate}
-                            onChange={(e) => setEditFormData({...editFormData, endDate: e.target.value})}
+                            onChange={(e) =>
+                              setEditFormData({
+                                ...editFormData,
+                                endDate: e.target.value,
+                              })
+                            }
                             className="w-full mt-1 rounded-md border border-gray-200 p-2"
                           />
                         </div>
                       </div>
 
                       <div>
-                        <label className="text-sm text-gray-500">Start Time</label>
+                        <label className="text-sm text-gray-500">
+                          Start Time
+                        </label>
                         <input
                           type="time"
                           value={editFormData.startTime}
-                          onChange={(e) => setEditFormData({...editFormData, startTime: e.target.value})}
+                          onChange={(e) =>
+                            setEditFormData({
+                              ...editFormData,
+                              startTime: e.target.value,
+                            })
+                          }
                           className="w-full mt-1 rounded-md border border-gray-200 p-2"
                         />
                       </div>
 
                       <div>
-                        <label className="text-sm text-gray-500">Special Tools</label>
+                        <label className="text-sm text-gray-500">
+                          Special Tools
+                        </label>
                         <textarea
                           value={editFormData.specialTools}
-                          onChange={(e) => setEditFormData({...editFormData, specialTools: e.target.value})}
+                          onChange={(e) =>
+                            setEditFormData({
+                              ...editFormData,
+                              specialTools: e.target.value,
+                            })
+                          }
                           className="w-full mt-1 rounded-md border border-gray-200 p-2"
                           rows="2"
                         />
@@ -1002,10 +1282,17 @@ export default function Requests() {
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="text-sm text-gray-500">Admin Pay Type</label>
+                          <label className="text-sm text-gray-500">
+                            Admin Pay Type
+                          </label>
                           <select
                             value={editFormData.adminPayType}
-                            onChange={(e) => setEditFormData({...editFormData, adminPayType: e.target.value})}
+                            onChange={(e) =>
+                              setEditFormData({
+                                ...editFormData,
+                                adminPayType: e.target.value,
+                              })
+                            }
                             className="w-full mt-1 rounded-md border border-gray-200 p-2"
                           >
                             <option value="">Select pay type</option>
@@ -1014,21 +1301,35 @@ export default function Requests() {
                           </select>
                         </div>
                         <div>
-                          <label className="text-sm text-gray-500">Admin Rate</label>
+                          <label className="text-sm text-gray-500">
+                            Admin Rate
+                          </label>
                           <input
                             type="number"
                             value={editFormData.adminRate}
-                            onChange={(e) => setEditFormData({...editFormData, adminRate: e.target.value})}
+                            onChange={(e) =>
+                              setEditFormData({
+                                ...editFormData,
+                                adminRate: e.target.value,
+                              })
+                            }
                             className="w-full mt-1 rounded-md border border-gray-200 p-2"
                           />
                         </div>
                       </div>
 
                       <div>
-                        <label className="text-sm text-gray-500">Deliverables</label>
+                        <label className="text-sm text-gray-500">
+                          Deliverables
+                        </label>
                         <textarea
                           value={editFormData.deliverables}
-                          onChange={(e) => setEditFormData({...editFormData, deliverables: e.target.value})}
+                          onChange={(e) =>
+                            setEditFormData({
+                              ...editFormData,
+                              deliverables: e.target.value,
+                            })
+                          }
                           className="w-full mt-1 rounded-md border border-gray-200 p-2"
                           rows="3"
                           placeholder="Enter deliverables for this request"
@@ -1036,10 +1337,17 @@ export default function Requests() {
                       </div>
 
                       <div>
-                        <label className="text-sm text-gray-500">Delivery Instructions</label>
+                        <label className="text-sm text-gray-500">
+                          Delivery Instructions
+                        </label>
                         <textarea
                           value={editFormData.deliveryInstructions}
-                          onChange={(e) => setEditFormData({...editFormData, deliveryInstructions: e.target.value})}
+                          onChange={(e) =>
+                            setEditFormData({
+                              ...editFormData,
+                              deliveryInstructions: e.target.value,
+                            })
+                          }
                           className="w-full mt-1 rounded-md border border-gray-200 p-2"
                           rows="3"
                           placeholder="Enter delivery instructions"
@@ -1075,12 +1383,15 @@ export default function Requests() {
                   <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
                     <Check className="h-6 w-6 text-green-600" />
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Request Updated Successfully</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Request Updated Successfully
+                  </h3>
                   <p className="text-sm text-gray-500">
-                    The request has been updated. Would you like to download the request details as PDF?
+                    The request has been updated. Would you like to download the
+                    request details as PDF?
                   </p>
                 </div>
-                
+
                 <div className="flex flex-col gap-3">
                   <button
                     onClick={() => {
@@ -1089,9 +1400,11 @@ export default function Requests() {
                         ...selectedRequest,
                         ...updatedRequest,
                         // Ensure admin fields are properly set
-                        adminPayType: updatedRequest.adminPayType || updatedRequest.payType,
-                        adminRate: updatedRequest.adminRate || updatedRequest.rate,
-                        deliverables: updatedRequest.deliverables || ''
+                        adminPayType:
+                          updatedRequest.adminPayType || updatedRequest.payType,
+                        adminRate:
+                          updatedRequest.adminRate || updatedRequest.rate,
+                        deliverables: updatedRequest.deliverables || "",
                       };
                       generatePDF(completeRequest);
                       setShowSuccessModal(false);
@@ -1101,7 +1414,7 @@ export default function Requests() {
                     <Download className="h-5 w-5 mr-2" />
                     Download PDF
                   </button>
-                  
+
                   <button
                     onClick={() => setShowSuccessModal(false)}
                     className="w-full inline-flex justify-center items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none"
@@ -1114,7 +1427,47 @@ export default function Requests() {
           )}
         </div>
       )}
+
+      {showAssignModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h2 className="text-xl font-semibold mb-4">Assign Task</h2>
+            <select
+              value={selectedTechnician ? selectedTechnician.id : ""}
+              onChange={(e) => {
+                const technician = technicians.find(
+                  (t) => t.id === parseInt(e.target.value)
+                );
+                setSelectedTechnician(technician);
+              }}
+              className="w-full mb-4 p-2 border border-gray-300 rounded-md"
+            >
+              <option value="" disabled>
+                Select a technician
+              </option>
+              {technicians.map((technician) => (
+                <option key={technician.id} value={technician.id}>
+                  {technician.name}
+                </option>
+              ))}
+            </select>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={assignTask}
+                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              >
+                Assign
+              </button>
+              <button
+                onClick={() => setShowAssignModal(false)}
+                className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
-

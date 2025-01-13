@@ -33,7 +33,6 @@ const Technicians = () => {
         );
   
         if (response.data && response.data.data) {
-          console.log('Client data:', response.data.data);
           setClients(response.data.data);
         } else {
           setClients([]);
@@ -41,15 +40,7 @@ const Technicians = () => {
         setLoading(false);
       } catch (error) {
         console.error("Error fetching clients:", error);
-        console.log("Error details:", {
-          status: error.response?.status,
-          data: error.response?.data,
-          headers: error.response?.headers,
-        });
   
-        if (error.response?.status === 401) {
-          console.log("Auth token used:", localStorage.getItem("authToken"));
-        }
         setClients([]);
         setLoading(false);
       }
@@ -89,10 +80,7 @@ const Technicians = () => {
     const handleActivation = async (userId, action) => {
       try {
         const authToken = localStorage.getItem("authToken");
-        
-        console.log(`Sending ${action} request for user ${userId}`);
-        console.log(`URL: https://beta.techskims.tech/api/admin/user/${userId}/${action}`);
-  
+
         const response = await axios({
           method: 'post',
           url: `https://beta.techskims.tech/api/admin/user/${userId}/${action}`,
@@ -102,9 +90,7 @@ const Technicians = () => {
             'Content-Type': 'application/json'
           }
         });
-  
-        console.log('Activation/Deactivation response:', response.data);
-  
+
         if (response.data.status === "success") {
           toast.success(response.data.data);
           
@@ -125,11 +111,6 @@ const Technicians = () => {
           if (updatedResponse.data && updatedResponse.data.data) {
             // Log detailed information about the user we just updated
             const updatedUser = updatedResponse.data.data.find(client => client.user.id === userId);
-            console.log('Updated user details:', {
-              id: userId,
-              status: updatedUser?.user.status,
-              fullUserData: updatedUser
-            });
   
             setClients(updatedResponse.data.data);
           }
@@ -145,6 +126,13 @@ const Technicians = () => {
           toast.error(error.response?.data?.message || `Failed to ${action} client. Please try again.`);
         }
       }
+    };
+
+    const getInitials = (name) => {
+      if (!name) return '';
+      const namesArray = name.split(' ');
+      const initials = namesArray.map((n) => n[0]).join('');
+      return initials.toUpperCase();
     };
   
     return (
@@ -297,14 +285,18 @@ const Technicians = () => {
                         <tr key={client.user.id}>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
-                              <div className="h-10 w-10 flex-shrink-0">
+                              <div className="h-10 w-10 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                              {client.user?.thumbnail ? (
                                 <img
-                                  className="h-10 w-10 rounded-full"
-                                  src={
-                                    client.user.thumbnail || "/default-avatar.png"
-                                  }
-                                  alt=""
-                                />
+                                className="h-10 w-10 rounded-full"
+                                src={
+                                  client.user.thumbnail || "/default-avatar.png"
+                                }
+                                alt=""
+                              />
+                              ) : (
+                                <span className="text-lg font-bold">{getInitials(client.user.name)}</span>
+                              )}
                               </div>
                               <div className="ml-4">
                                 <div className="text-sm font-medium text-gray-900">

@@ -18,7 +18,6 @@ export const useProfileData = () => {
     const fetchProfile = async () => {
       try {
         const authToken = localStorage.getItem("authToken");
-        console.log("Token:", authToken); // Debugging line
         const response = await axios.get(
           "https://beta.techskims.tech/api/admin/profile",
           {

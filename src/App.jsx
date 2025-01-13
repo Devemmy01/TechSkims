@@ -37,6 +37,8 @@ import Clients from "./pages/Admin/Clients.jsx";
 import ClientDetails from "./pages/Admin/ClientDetails.jsx";
 import Technicians from "./pages/Admin/Technicians";
 import TechniciansDetails from "./pages/Admin/TechniciansDetails.jsx";
+import TechnicianDashboard from "./pages/Technician/TechnicianDashboard.jsx";
+import TechniciansSettings from "./pages/Technician/TechniciansSettings.jsx";
 // import Reports from './pages/Admin/Reports';
 // import Messages from './pages/Admin/Messages';
 // import Account from './pages/Admin/Account';
@@ -46,6 +48,8 @@ import { ToastContainer, toast } from "react-toastify";
 import axiosInstance from "./utils/axiosConfig";
 import "react-toastify/dist/ReactToastify.css";
 import AdminGallery from "./pages/Admin/AdminGallery.jsx";
+import TechnicianLayout from "./pages/Technician/components/TechnicianLayout.jsx";
+import TechniciansProjects from "./pages/Technician/TechniciansProjects.jsx";
 
 const ScrollToSection = () => {
   const location = useLocation();
@@ -92,7 +96,10 @@ const App = () => {
     "/admin/gallery",
     "/admin/technicians",
     "/admin/clients/:id",
-    "/admin/technicians/:id"
+    "/admin/technicians/:id",
+    "/technician-dashboard",
+    "/technician-dashboard/settings",
+    "/technician-dashboard/projects"
   ];
   const hideLayoutPaths = [
     "/admin/dashboard",
@@ -111,7 +118,10 @@ const App = () => {
     "/admin/settings",
     "/admin/gallery",
     "/admin/clients/:id",
-    "/admin/technicians/:id"
+    "/admin/technicians/:id",
+    "/technician-dashboard",
+    "/technician-dashboard/settings",
+    "/technician-dashboard/projects"
   ];
 
   return (
@@ -142,6 +152,12 @@ const App = () => {
           <Route path="/client-dashboard/messages" element={<Messages />} />
           <Route path="/client-dashboard/settings" element={<Settings />} />
           {/* Add other client routes here */}
+        </Route>
+
+        <Route element={<TechnicianLayout />} >
+          <Route path="/technician-dashboard" element={<TechnicianDashboard />} />
+          <Route path="/technician-dashboard/settings" element={<TechniciansSettings/>} />
+          <Route path="/technician-dashboard/projects" element={<TechniciansProjects />} />
         </Route>
 
         {/* Admin Routes */}
