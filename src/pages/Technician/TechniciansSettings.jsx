@@ -53,13 +53,14 @@ const TechniciansSettings = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [imageRetryAttempted, setImageRetryAttempted] = useState(false);
   const [passwordFields, setPasswordFields] = useState({
+    currentPassword: "",
     password: "",
     passwordConfirmation: "",
   });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    if (name === "password" || name === "passwordConfirmation") {
+    if (name === "password" || name === "passwordConfirmation" || name === "currentPassword") {
       setPasswordFields((prev) => ({ ...prev, [name]: value }));
     } else {
       setProfile((prev) => ({ ...prev, [name]: value }));
@@ -76,6 +77,11 @@ const TechniciansSettings = () => {
     formData.append("email", profile.email);
     formData.append("phone", profile.phone || "");
     formData.append("location", profile.location);
+
+    // Include current password for validation
+    if (passwordFields.currentPassword) {
+      formData.append("current_password", passwordFields.currentPassword);
+    }
 
     // Only include password fields if a new password is being set
     if (passwordFields.password || passwordFields.passwordConfirmation) {
@@ -109,7 +115,7 @@ const TechniciansSettings = () => {
         }
       );
       toast.success(response.data.message);
-      setPasswordFields({ password: "", passwordConfirmation: "" });
+      setPasswordFields({ currentPassword: "", password: "", passwordConfirmation: "" });
     } catch (error) {
       console.error("Error:", error.response.data);
       toast.error(`Error: ${error.response.data.message}`);
@@ -435,10 +441,10 @@ const TechniciansSettings = () => {
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex flex-col w-full md:w-1/2 relative">
                   <label className="block text-sm mb-2">Current Password</label>
-
                   <input
                     type={passwordVisible ? "text" : "password"}
-                    name="password"
+                    name="currentPassword"
+                    value={passwordFields.currentPassword}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 relative border border-gray-200 rounded-lg bg-gray-50"
                   />

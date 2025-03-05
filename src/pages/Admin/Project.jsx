@@ -14,8 +14,6 @@ import {
   Image,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import banner from "@/assets/banner.png";
-import bannermob from "@/assets/bannermob.png";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const BASE_URL = "https://beta.techskims.tech/api";
@@ -64,7 +62,7 @@ function Projects() {
     fetchRequests();
   }, []);
 
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
 
   const handleReset = () => {
     setStatus("all");
@@ -124,26 +122,7 @@ function Projects() {
   );
 
   return (
-    <div className="bg-[#F8F8F8] w-full h-[calc(100vh-64px)] px-4 md:px-10 absolute lg:w-[calc(100%-256px)] pb-10 scrollbar-custom">
-      
-      <style jsx>{`
-        .scrollbar-custom::-webkit-scrollbar {
-          width: 4px;
-          height: 4px;
-        }
-        .scrollbar-custom::-webkit-scrollbar-track {
-          background: #f1f1f1;
-          border-radius: 4px;
-        }
-        .scrollbar-custom::-webkit-scrollbar-thumb {
-          background: #888;
-          border-radius: 4px;
-        }
-        .scrollbar-custom::-webkit-scrollbar-thumb:hover {
-          background: #555;
-        }
-      `}</style>
-
+    <div className="bg-[#F8F8F8] w-full px-4 md:px-10 absolute md:relative h-screen overflow-y-scroll pb-10 scrollbar-custom">
       <div className="w-full flex items-center justify-between mt-10 pb-3">
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-[600] text-[#202224]">Projects</h1>
@@ -257,14 +236,12 @@ function Projects() {
                   </td>
                   <td className="px-6 py-4 text-base capitalize text-left">
                     <span
-                      className={`px-2 py-1 rounded-md ${
+                      className={`px-3 py-1 rounded-md text-[14px] capitalize border-none outline-none appearance-none -webkit-appearance-none text-center w-fit ${
                         request.status === "completed"
-                          ? "bg-green-100 text-green-500 font-semibold"
+                          ? "bg-green-100 text-green-500"
                           : request.status === "ongoing"
-                          ? "bg-blue-100 font-semibold text-blue-500"
-                          : request.status === "pending"
-                          ? "bg-[#ffa85633] text-[#FFA756] font-semibold"
-                          : "bg-gray-100 text-gray-600"
+                          ? "bg-blue-100 text-blue-500"
+                          : "bg-yellow-100 text-yellow-600"
                       }`}
                     >
                       {request.status}

@@ -7,158 +7,165 @@ import {
   Clock,
   Calendar,
   HourglassIcon,
-  Search,
+  PieChart,
 } from "lucide-react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
-function ClientHeader({ client }) {
-  if (!client || !client.user) return null;
+// Technician Header Component
+function TechnicianHeader({ technician }) {
+  if (!technician || !technician.user) return null;
 
   return (
-    <div className="w-full">
-      <div className="flex flex-col md:flex-row gap-5 w-full items-start md:items-center">
-        <div className="flex items-center gap-4 w-full md:w-1/3 bg-white whitespace-nowrap p-4 rounded-lg shadow-sm">
-          <div className="w-12 h-12 md:w-16 md:h-16 bg-purple-100 rounded-full flex items-center justify-center">
-            {client.user.thumbnail ? (
-              <img
-                src={client.user.thumbnail}
-                alt={client.user.name}
-                className="w-12 h-12 rounded-full"
-              />
-            ) : (
-              <span className="text-[#00A8E8] text-4xl font-semibold">
-                {client.user.name?.charAt(0) || "U"}
-              </span>
+    <Card className="w-full mb-6">
+      <CardContent className="pt-6">
+        <div className="flex flex-col md:flex-row gap-6 items-center">
+          <div className="relative">
+            <div className="w-24 h-24 bg-purple-100 rounded-full flex items-center justify-center overflow-hidden shadow-md">
+              {technician.user.thumbnail ? (
+                <img
+                  src={technician.user.thumbnail}
+                  alt={technician.user.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-[#00A8E8] text-4xl font-semibold">
+                  {technician.user.name?.charAt(0) || "T"}
+                </span>
+              )}
+            </div>
+            {technician.user.isVerified === "yes" && (
+              <div className="absolute bottom-0 right-0 bg-green-500 text-white rounded-full p-1">
+                <CheckCircle size={16} />
+              </div>
             )}
           </div>
-          <h1 className="text-xl">{client.user.name}</h1>
-        </div>
-        <div className="flex flex-col sm:flex-row md:justify-between md:px-14 gap-8 bg-white p-3 md:p-6 rounded-md shadow-sm w-full">
-          <div className="flex items-center gap-4 text-gray-900">
-            <Phone className="w-6 h-6" />
-            <div className="flex flex-col">
-              <p className="text-sm">Mobile</p>
-              <span className="font-semibold">
-                {client.user.phone || "N/A"}
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-4 text-gray-900">
-            <Mail className="w-6 h-6" />
-            <div className="flex flex-col">
-              <p className="text-sm">Email</p>
-              <span className="font-semibold">{client.user.email}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-4 text-gray-900">
-            <MapPin className="w-6 h-6" />
-            <div className="flex flex-col">
-              <p className="text-sm">Location</p>
-              <span className="font-semibold">
-                {client.user.location || "N/A"}
-              </span>
+          <div className="flex-grow">
+            <h1 className="text-2xl font-bold text-gray-900">
+              {technician.user.name}
+            </h1>
+            <div className="flex items-center gap-2 mt-2">
+              <Badge variant="secondary">
+                {technician.user.role?.[0] || "Technician"}
+              </Badge>
+              <Badge
+                variant={
+                  technician.user.status === "active"
+                    ? "default"
+                    : "destructive"
+                }
+              >
+                {technician.user.status}
+              </Badge>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
-function MetricsCard({ count, label, icon: Icon, color }) {
+// Contact Information Component
+function ContactInformation({ technician }) {
   return (
-    <div className="bg-white p-4 rounded-lg shadow-sm">
-      <div className="flex items-center gap-4">
-        <div
-          className={`w-10 h-10 bg-[#00A8E8] rounded-full flex items-center justify-center`}
-        >
-          <Icon className="w-5 h-5 text-white" />
-        </div>
-        <div>
-          <div className="text-2xl font-bold">{count}</div>
-          <div className="text-sm text-gray-600">{label}</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ProjectsProgress({ percentage }) {
-  const validPercentage = isNaN(percentage) ? 0 : percentage;
-  const circumference = 2 * Math.PI * 45;
-  const strokeDashoffset =
-    circumference - (validPercentage / 100) * circumference;
-
-  return (
-    <div className="bg-white p-6 rounded-lg shadow-sm w-full md:w-[600px]">
-      <h2 className="text-lg font-semibold mb-4">Projects Progress</h2>
-      <div className="flex justify-center">
-        <div className="relative">
-          <svg className="w-32 h-32 transform -rotate-90">
-            <circle
-              cx="64"
-              cy="64"
-              r="45"
-              stroke={validPercentage === 0 ? "#FAF5FF" : "#00A8E8"}
-              strokeWidth="10"
-              fill="none"
-            />
-            <circle
-              cx="64"
-              cy="64"
-              r="45"
-              stroke={validPercentage === 0 ? "#FAF5FF" : "#00A8E8"}
-              strokeWidth="10"
-              fill="none"
-              strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
-              strokeLinecap="round"
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-2xl font-bold">
-              <svg width="100" height="100">
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="45"
-                  stroke="#00A8E8"
-                  strokeWidth="10"
-                  fill="none"
-                  strokeDasharray={circumference}
-                  strokeDashoffset={strokeDashoffset}
-                />
-                <text
-                  x="50%"
-                  y="50%"
-                  textAnchor="middle"
-                  dy=".3em"
-                  fontSize="30"
-                >
-                  {validPercentage}%
-                </text>
-              </svg>
-            </span>
+    <Card>
+      <CardHeader>
+        <CardTitle>Contact Information</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4 flex flex-col gap-4 md:flex-row md:justify-around items-center">
+        <div className="flex items-center gap-4">
+          <Phone className="w-5 h-5 text-gray-500" />
+          <div>
+            <p className="text-sm text-gray-500">Phone</p>
+            <p className="font-semibold">{technician.user.phone || "N/A"}</p>
           </div>
         </div>
-      </div>
-    </div>
+        <div className="flex items-center gap-4">
+          <Mail className="w-5 h-5 text-gray-500" />
+          <div>
+            <p className="text-sm text-gray-500">Email</p>
+            <p className="font-semibold">{technician.user.email}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <MapPin className="w-5 h-5 text-gray-500" />
+          <div>
+            <p className="text-sm text-gray-500">Location</p>
+            <p className="font-semibold">{technician.user.location || "N/A"}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
-export default function TechniciansDetails() {
-  const { id } = useParams(); // Get client ID from URL
-  const [clientData, setClientData] = useState(null);
+// Project Metrics Component
+function ProjectMetrics({ technicianData }) {
+  const metrics = [
+    {
+      count: technicianData?.completedProject || 0,
+      label: "Completed Projects",
+      icon: CheckCircle,
+      color: "text-green-500",
+    },
+    {
+      count: technicianData?.ongoingProject || 0,
+      label: "Ongoing Projects",
+      icon: Clock,
+      color: "text-blue-500",
+    },
+    {
+      count: technicianData?.upcomingProjects || 0,
+      label: "Upcoming Projects",
+      icon: Calendar,
+      color: "text-purple-500",
+    },
+    {
+      count: technicianData?.pendingProjects || 0,
+      label: "Pending Projects",
+      icon: HourglassIcon,
+      color: "text-yellow-500",
+    },
+  ];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Project Overview</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-3 gap-4">
+          {metrics.map(({ count, label, icon: Icon, color }) => (
+            <div
+              key={label}
+              className="bg-gray-50 p-4 rounded-lg flex items-center gap-3 hover:bg-gray-100 transition-colors"
+            >
+              <Icon className={`${color} w-6 h-6`} />
+              <div>
+                <p className="text-sm text-gray-500">{label}</p>
+                <p className="text-xl font-bold text-gray-800">{count}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function TechnicianDetails() {
+  const { id } = useParams();
+  const [technicianData, setTechnicianData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchClientDetails = async () => {
+    const fetchTechnicianDetails = async () => {
       try {
         const authToken = localStorage.getItem("authToken");
-
         const response = await axios.get(
           `https://beta.techskims.tech/api/admin/technicians/${id}`,
           {
@@ -170,23 +177,24 @@ export default function TechniciansDetails() {
         );
 
         if (response.data && response.data.data) {
-          setClientData(response.data.data);
+          setTechnicianData(response.data.data);
         } else {
-          throw new Error("No client data received");
+          throw new Error("No technician data received");
         }
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching client details:", error);
-
+        console.error("Error fetching technician details:", error);
         if (error.response?.status === 401) {
           toast.error("Session expired. Please login again.");
           window.location.href = "/login";
         } else {
           setError(
-            error.response?.data?.message || "Failed to fetch client details"
+            error.response?.data?.message ||
+              "Failed to fetch technician details"
           );
           toast.error(
-            error.response?.data?.message || "Failed to fetch client details"
+            error.response?.data?.message ||
+              "Failed to fetch technician details"
           );
         }
         setLoading(false);
@@ -194,16 +202,16 @@ export default function TechniciansDetails() {
     };
 
     if (id) {
-      fetchClientDetails();
+      fetchTechnicianDetails();
     }
   }, [id]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F8F8F8] absolute w-full lg:w-[calc(100%-256px)] p-4 md:p-8 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading client details...</p>
+          <p className="mt-4 text-gray-600">Loading technician details...</p>
         </div>
       </div>
     );
@@ -211,7 +219,7 @@ export default function TechniciansDetails() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#F8F8F8] absolute w-full lg:w-[calc(100%-256px)] p-4 md:p-8 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-red-500 text-center">
           <p className="text-xl font-semibold">Error</p>
           <p className="mt-2">{error}</p>
@@ -221,7 +229,7 @@ export default function TechniciansDetails() {
   }
 
   return (
-    <div className="h-[calc(100vh-64px)] overflow-y-auto bg-[#F8F8F8] absolute w-full lg:w-[calc(100%-256px)] p-4 md:p-8 scrollbar-custom z-[9999] pb-10">
+    <div className="bg-[#F8F8F8] w-full px-4 md:px-10 absolute md:relative h-screen overflow-y-scroll pb-10 scrollbar-custom pt-10">
       <style jsx>{`
         .scrollbar-custom::-webkit-scrollbar {
           width: 4px;
@@ -239,60 +247,12 @@ export default function TechniciansDetails() {
           background: #555;
         }
       `}</style>
+      <div className=" mx-auto space-y-6">
+        <TechnicianHeader technician={technicianData} />
+        <ProjectMetrics technicianData={technicianData} />
 
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="mb-6">
-          <h1 className="text-xl font-semibold text-gray-900">
-            Client Profile
-          </h1>
-          <p className="text-sm text-gray-500">
-            See more details about the client here.
-          </p>
-        </div>
-
-        <ClientHeader client={clientData} />
-
-        <div className="grid md:flex md:flex-wrap md:justify-evenly gap-6">
-          <MetricsCard
-            count={clientData?.completedProject || 0}
-            label="Completed Projects"
-            icon={CheckCircle}
-            color="bg-green-500"
-          />
-          <MetricsCard
-            count={clientData?.ongoingProject || 0}
-            label="Ongoing Projects"
-            icon={Clock}
-            color="bg-blue-500"
-          />
-          <MetricsCard
-            count={clientData?.upcomingProjects || 0}
-            label="Upcoming Projects"
-            icon={Calendar}
-            color="bg-purple-500"
-          />
-          <MetricsCard
-            count={clientData?.pendingProjects || 0}
-            label="Pending Projects"
-            icon={HourglassIcon}
-            color="bg-yellow-500"
-          />
-        </div>
-
-        <div className="flex items-center pt-5 justify-center">
-          <ProjectsProgress
-            percentage={
-              clientData
-                ? Math.round(
-                    (clientData.completedProject /
-                      (clientData.completedProject +
-                        clientData.ongoingProject +
-                        clientData.pendingProjects)) *
-                      100
-                  )
-                : 0
-            }
-          />
+        <div className="">
+          <ContactInformation technician={technicianData} />
         </div>
       </div>
     </div>

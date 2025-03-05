@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import {
   FileText,
   ChevronLeft,
@@ -34,6 +36,8 @@ function TechniciansProjects() {
   const [taskDetails, setTaskDetails] = useState(null);
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [taskToComplete, setTaskToComplete] = useState(null);
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -68,12 +72,10 @@ function TechniciansProjects() {
     setSearchTerm("");
   };
 
-  // Add this function near your other handlers
   const handleSearch = (value) => {
     setSearchTerm(value);
   };
 
-  // Replace your existing filteredRequests definition with this:
   const filteredRequests = requests.filter((request) => {
     const matchesSearch =
       request.request?.service
@@ -97,6 +99,59 @@ function TechniciansProjects() {
   const handleRowClick = (task) => {
     setSelectedTask(task);
     setIsModalOpen(true);
+  };
+
+  const updateTaskStatus = async (taskId, newStatus) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const response = await axios.put(
+        `${BASE_URL}/technician/tasks/${taskId}/status`,
+        { status: newStatus },
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.status === "success") {
+        setRequests((prevRequests) =>
+          prevRequests.map((request) =>
+            request.id === taskId
+              ? { ...request, status: newStatus }
+              : request
+          )
+        );
+      }
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        toast.error("Task has already been completed.");
+      } else if (error.response && error.response.status === 422) {
+        toast.error("Invalid status value.");
+      } else {
+        toast.error("Error updating task status.");
+      }
+    }
+  };
+
+  const handleStatusChange = (taskId, newStatus) => {
+    if (newStatus === "completed") {
+      setTaskToComplete(taskId);
+      setConfirmModalOpen(true);
+    } else {
+      updateTaskStatus(taskId, newStatus);
+    }
+  };
+
+  const confirmCompletion = () => {
+    if (taskToComplete) {
+      updateTaskStatus(taskToComplete, "completed");
+      setConfirmModalOpen(false);
+      setTaskToComplete(null);
+    }
   };
 
   const TaskDetailsModal = ({ isOpen, onClose, task }) => {
@@ -282,6 +337,29 @@ function TechniciansProjects() {
     );
   };
 
+  const ConfirmCompletionModal = () => (
+    <Dialog open={confirmModalOpen} onOpenChange={() => setConfirmModalOpen(false)}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-semibold">
+            Confirm Completion
+          </DialogTitle>
+        </DialogHeader>
+        <div className="mt-4">
+          <p>Are you sure you want to mark this task as complete? This action cannot be reversed.</p>
+          <div className="flex justify-end mt-6">
+            <Button onClick={() => setConfirmModalOpen(false)} className="mr-2">
+              Cancel
+            </Button>
+            <Button onClick={confirmCompletion} className="bg-red-500 text-white">
+              Confirm
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   const TableLoader = () => (
     <tbody>
       {[...Array(7)].map((_, index) => (
@@ -311,6 +389,7 @@ function TechniciansProjects() {
 
   return (
     <div className="bg-[#F8F8F8] w-full px-4 md:px-10 absolute lg:w-[calc(100%-256px)] pb-10">
+      <ToastContainer />
       <div className="w-full items-center mt-10 pb-3">
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-[600] text-[#202224]">Projects</h1>
@@ -390,8 +469,7 @@ function TechniciansProjects() {
               {currentRequests.map((request) => (
                 <tr
                   key={request.id}
-                  className="border-b text-sm hover:bg-gray-50"
-                  onClick={() => handleRowClick(request)}
+                  className="border-b text-sm hover:bg-gray-50 whitespace-nowrap cursor-pointer"
                 >
                   <td className="px-6 py-4 text-left">{request.id}</td>
                   <td className="px-6 py-4 text-left">
@@ -407,19 +485,24 @@ function TechniciansProjects() {
                     {request.request.technicianTitle}
                   </td>
                   <td className="px-4 py-2 text-[14px] capitalize text-left">
-                    <span
+                    <select
+                      value={request.status}
+                      onChange={(e) => handleStatusChange(request.id, e.target.value)}
+                      disabled={request.status === "completed"}
                       className={`ml-2 px-2 py-1 rounded-md ${
-                        request.request.status === "completed"
+                        request.status === "completed"
                           ? "bg-green-100 text-green-500"
-                          : request.request.status === "ongoing"
+                          : request.status === "ongoing"
                           ? "bg-blue-100 text-blue-500"
                           : "bg-yellow-100 text-yellow-600"
                       }`}
                     >
-                      {request.request.status}
-                    </span>
+                      <option value="pending">Pending</option>
+                      <option value="ongoing">Ongoing</option>
+                      <option value="completed">Completed</option>
+                    </select>
                   </td>
-                  <td onClick={() => handleRowClick(request)}>
+                  <td onClick={() => handleRowClick(request)} className="mx-3">
                     <Button className="bg-[#00A8E8]">View task</Button>
                   </td>
                 </tr>
@@ -488,6 +571,8 @@ function TechniciansProjects() {
         }}
         task={selectedTask}
       />
+
+      <ConfirmCompletionModal />
     </div>
   );
 }

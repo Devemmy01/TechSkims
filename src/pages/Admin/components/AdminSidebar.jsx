@@ -13,14 +13,13 @@ const navItems = [
   { icon: Users, label: 'Clients', path: '/admin/clients' },
   { icon: UserCog, label: 'Technicians', path: '/admin/technicians' },
   { icon: BarChart2, label: 'Reports & Analytics', path: '/admin/reports' },
-  { icon: MessageSquare, label: 'Messages', path: '/admin/messages' },
 ]
 
 const accountItems = [
   { icon: Settings, label: 'Settings', path: '/admin/settings' },
 ]
 
-export default function AdminSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }) {
+function AdminSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }) {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -41,7 +40,7 @@ export default function AdminSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }) 
       <aside
         className={`${
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        } fixed inset-y-0 left-0 w-64 transform border-r bg-white transition-transform duration-200 ease-in-out overflow-y-auto scrollbar-custom lg:relative lg:translate-x-0 h-[100vh] z-[9999]`}
+        } fixed inset-y-0 left-0 w-64 transform border-r bg-white transition-transform duration-200 ease-in-out overflow-y-auto scrollbar-custom lg:relative lg:translate-x-0 h-screen z-[9999]`}
       >
         <style jsx>{`
           .scrollbar-custom::-webkit-scrollbar {
@@ -119,3 +118,5 @@ export default function AdminSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }) 
     </>
   )
 }
+
+export default AdminSidebar;

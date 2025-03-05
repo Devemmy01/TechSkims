@@ -8,27 +8,65 @@ export default function NotificationModal({ isOpen, onClose }) {
   useEffect(() => {
     if (isOpen) {
       setLoading(true);
-      axios.get('https://beta.techskims.tech/api/notifications')
-        .then(response => setNotifications(response.data))
-        .catch(error => console.error(error))
-        .finally(() => setLoading(false));
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('Authentication required');
+        setLoading(false);
+        return;
+      }
+
+      axios.get('https://beta.techskims.tech/api/notifications', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(response => {
+        if (response.data.status === 'success' && Array.isArray(response.data.data)) {
+          setNotifications(response.data.data);
+        } else {
+          console.error('Unexpected response format:', response.data);
+          setNotifications([]);
+        }
+      })
+      .catch(error => console.error('Error fetching notifications:', error))
+      .finally(() => setLoading(false));
     }
   }, [isOpen]);
 
   const markAsRead = (id) => {
-    axios.post(`https://beta.techskims.tech/api/notifications/mark-all`, { id })
-      .then(() => {
-        setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n));
-      })
-      .catch(error => console.error(error));
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('Authentication required');
+      return;
+    }
+
+    axios.post(`https://beta.techskims.tech/api/notifications/mark-all`, { id }, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    .then(() => {
+      setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n));
+    })
+    .catch(error => console.error('Error marking as read:', error));
   };
 
   const markAsUnread = (id) => {
-    axios.post(`https://beta.techskims.tech/api/notifications/mark-all`, { id })
-      .then(() => {
-        setNotifications(notifications.map(n => n.id === id ? { ...n, read: false } : n));
-      })
-      .catch(error => console.error(error));
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('Authentication required');
+      return;
+    }
+
+    axios.post(`https://beta.techskims.tech/api/notifications/mark-all`, { id }, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    .then(() => {
+      setNotifications(notifications.map(n => n.id === id ? { ...n, read: false } : n));
+    })
+    .catch(error => console.error('Error marking as unread:', error));
   };
 
   if (!isOpen) return null;

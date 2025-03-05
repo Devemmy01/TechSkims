@@ -538,7 +538,6 @@ export default function Requests() {
         return;
       }
 
-      // Create FormData for the update
       const data = new FormData();
       data.append("status", "completed");
       data.append("_method", "PUT");
@@ -556,7 +555,7 @@ export default function Requests() {
 
       if (response.data.status === "success") {
         toast.success("Request marked as completed");
-        fetchRequests(); // Refresh the requests list
+        fetchRequests();
       }
     } catch (error) {
       console.error("Error completing request:", error);
@@ -571,7 +570,6 @@ export default function Requests() {
     }
   };
 
-  // Modify the handleStatusChange function
   const handleStatusChange = async (requestId, newStatus) => {
     try {
       const token = localStorage.getItem("token");
@@ -580,14 +578,11 @@ export default function Requests() {
         return;
       }
 
-      // Find the current request data
       const currentRequest = requests.find((req) => req.id === requestId);
 
-      // Get today's date in YYYY-MM-DD format
       const today = new Date().toISOString().split("T")[0];
 
       const data = new FormData();
-      // Add all required fields with proper formatting
       data.append("status", newStatus);
       data.append("startDate", currentRequest.startDate || today);
       data.append("startTime", formatTimeToHi(currentRequest.startTime));
@@ -616,11 +611,9 @@ export default function Requests() {
     } catch (error) {
       console.error("Error updating status:", error);
 
-      // Handle validation errors
       if (error.response?.status === 422) {
         const errorMessages = error.response.data.error_message;
 
-        // Format validation error messages
         if (errorMessages) {
           Object.entries(errorMessages).forEach(([field, messages]) => {
             const message = Array.isArray(messages) ? messages[0] : messages;
@@ -667,7 +660,7 @@ export default function Requests() {
   return (
     <>
       {loading ? (
-        <div className="min-h-screen bg-[#F8F8F8] absolute w-full lg:w-[calc(100%-256px)] p-4 md:p-8 flex items-center justify-center">
+        <div className="h-screen bg-[#F8F8F8] absolute w-full lg:w-[calc(100%-256px)] p-4 md:p-8 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
             <p className="mt-4 text-gray-600">Loading requests...</p>
@@ -1060,7 +1053,7 @@ export default function Requests() {
 
           {/* Edit Modal */}
           {showEditModal && selectedRequest && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]">
               <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
                 <h2 className="text-xl font-semibold mb-4">Edit Request</h2>
                 <form onSubmit={handleUpdateRequest} className="grid gap-4">
@@ -1377,7 +1370,7 @@ export default function Requests() {
           )}
 
           {showSuccessModal && updatedRequest && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]">
               <div className="bg-white rounded-lg max-w-md w-full p-6">
                 <div className="text-center mb-6">
                   <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">

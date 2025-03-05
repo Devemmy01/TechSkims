@@ -34,9 +34,9 @@ import Gallery from "./pages/Gallery";
 // import Projects from './pages/Admin/Projects';
 // import Services from './pages/Admin/Services';
 import Clients from "./pages/Admin/Clients.jsx";
-import ClientDetails from "./pages/Admin/ClientDetails.jsx";
+import ClientDetails from "./pages/Admin/ClientDetails";
 import Technicians from "./pages/Admin/Technicians";
-import TechniciansDetails from "./pages/Admin/TechniciansDetails.jsx";
+import TechniciansDetails from "./pages/Admin/TechniciansDetails";
 import TechnicianDashboard from "./pages/Technician/TechnicianDashboard.jsx";
 import TechniciansSettings from "./pages/Technician/TechniciansSettings.jsx";
 // import Reports from './pages/Admin/Reports';
@@ -50,6 +50,12 @@ import "react-toastify/dist/ReactToastify.css";
 import AdminGallery from "./pages/Admin/AdminGallery.jsx";
 import TechnicianLayout from "./pages/Technician/components/TechnicianLayout.jsx";
 import TechniciansProjects from "./pages/Technician/TechniciansProjects.jsx";
+import TechReport from "./pages/Technician/TechReport.jsx";
+import TechnicianAnalytics from './pages/Technician/components/TechnicianAnalytics';
+import AdminAnalytics from './pages/Admin/components/AdminAnalytics';
+// import TechMessages from "./pages/Technician/TechMessages.jsx";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 const ScrollToSection = () => {
   const location = useLocation();
@@ -99,7 +105,12 @@ const App = () => {
     "/admin/technicians/:id",
     "/technician-dashboard",
     "/technician-dashboard/settings",
-    "/technician-dashboard/projects"
+    "/technician-dashboard/projects",
+    "/technician-dashboard/reports",
+    "/technician-dashboard/messages",
+    "/admin/reports",
+    "/forgot-password",
+    "/reset-password",
   ];
   const hideLayoutPaths = [
     "/admin/dashboard",
@@ -121,8 +132,13 @@ const App = () => {
     "/admin/technicians/:id",
     "/technician-dashboard",
     "/technician-dashboard/settings",
-    "/technician-dashboard/projects"
-  ];
+    "/technician-dashboard/projects",
+    "/technician-dashboard/reports",
+    "/technician-dashboard/messages",
+    "/admin/reports",
+    "/forgot-password",
+    "/reset-password",
+  ];  
 
   return (
     <div className="app">
@@ -149,7 +165,7 @@ const App = () => {
           <Route path="/client-dashboard/requests" element={<Requestss />} />
           <Route path="/client-dashboard/projects" element={<Projects />} />
           <Route path="/client-dashboard/reports" element={<Report />} />
-          <Route path="/client-dashboard/messages" element={<Messages />} />
+          {/* <Route path="/client-dashboard/messages" element={<Messages />} /> */}
           <Route path="/client-dashboard/settings" element={<Settings />} />
           {/* Add other client routes here */}
         </Route>
@@ -158,6 +174,8 @@ const App = () => {
           <Route path="/technician-dashboard" element={<TechnicianDashboard />} />
           <Route path="/technician-dashboard/settings" element={<TechniciansSettings/>} />
           <Route path="/technician-dashboard/projects" element={<TechniciansProjects />} />
+          <Route path="technician-dashboard/reports" element={<TechReport />} />
+          {/* <Route path="technician-dashboard/messages" element={<TechMessages />} /> */}
         </Route>
 
         {/* Admin Routes */}
@@ -172,12 +190,12 @@ const App = () => {
           <Route path="/admin/technicians" element={<Technicians />} />
           <Route path="/admin/clients/:id" element={<ClientDetails />} />
           <Route path="/admin/technicians/:id" element={<TechniciansDetails />} />
-          {/* <Route path="/admin/projects" element={<Projects />} />
-          <Route path="/admin/messages" element={<Messages />} />
-          <Route path="/admin/reports" element={<Reports />} />
-          <Route path="/admin/account" element={<Account />} />
-          */}
+          <Route path="/admin/analytics" element={<AdminAnalytics />} />
+          <Route path="/admin/reports" element={<AdminAnalytics />} />
         </Route>
+
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
 
       {!hideFooterPaths.some((path) =>

@@ -11,7 +11,7 @@ const Technicians = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [status, setStatus] = useState("all");
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5;
+    const itemsPerPage = 10;
     const navigate = useNavigate()
   
     useEffect(() => {
@@ -250,7 +250,7 @@ const Technicians = () => {
               </div>
   
               {/* Clients Table */}
-              <div className="overflow-x-auto bg-white rounded-lg shadow scrollbar-custom">
+              <div className="overflow-x-auto whitespace-nowrap bg-white rounded-lg shadow scrollbar-custom">
                 
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">

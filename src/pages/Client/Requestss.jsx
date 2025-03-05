@@ -1,19 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
-import {
-  FileText,
-  ChevronLeft,
-  ChevronRight,
-  Check,
-  X,
-  Filter,
-  Search,
-  Clock,
-  MapPin,
-  Phone,
-  DollarSign
-} from "lucide-react";
 
 const BASE_URL = 'https://beta.techskims.tech/api';
 
@@ -309,12 +296,10 @@ export default function Requestss() {
     }
   };
 
-  // Update request
   const updateRequest = async (requestId, formData) => {
     try {
       const data = new FormData();
       
-      // Explicitly set each field
       data.append('serviceId', formData.serviceId);
       data.append('technicianTitle', formData.technicianTitle);
       data.append('location', formData.location);
@@ -334,7 +319,6 @@ export default function Requestss() {
         });
       }
 
-      // Add _method field for Laravel to handle PUT request
       data.append('_method', 'PUT');
 
       const response = await axios.post(`${BASE_URL}/client/requests/${requestId}`, data, {
@@ -509,7 +493,24 @@ export default function Requestss() {
   };
 
   return (
-    <div className="h-screen bg-[#F8F8F8] w-full lg:w-[calc(100%-256px)] absolute pt-10 md:pt-0 md:p-8">
+    <div className="bg-[#F8F8F8] w-full px-4 md:px-10 absolute lg:w-[calc(100%-256px)] h-screen overflow-y-scroll scrollbar-custom">
+      <style jsx>{`
+            .scrollbar-custom::-webkit-scrollbar {
+              width: 4px;
+              height: 4px;
+            }
+            .scrollbar-custom::-webkit-scrollbar-track {
+              background: #f1f1f1;
+              border-radius: 4px;
+            }
+            .scrollbar-custom::-webkit-scrollbar-thumb {
+              background: #888;
+              border-radius: 4px;
+            }
+            .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+              background: #555;
+            }
+          `}</style>
       <div className="mx-auto rounded-lg bg-[#F8F8F8] w-full p-6 shadow-sm">
         {/* Header */}
         <div className="mb-6 flex justify-between items-center w-full md:mt-8">
@@ -524,7 +525,7 @@ export default function Requestss() {
           </p>
           </div>
 
-          <a href="#requests" className="bg-[#00a6e8] hover:bg-[#00a6e8]/80 transition-all duration-300 cursor-pointer rounded-[4px] h-[48px] w-fit flex items-center px-4 md:px-5 text-white whitespace-nowrap">View Requests</a>
+          {/* <a href="#requests" className="bg-[#00a6e8] hover:bg-[#00a6e8]/80 transition-all duration-300 cursor-pointer rounded-[4px] h-[48px] w-fit flex items-center px-4 md:px-5 text-white whitespace-nowrap">View Requests</a> */}
         </div>
 
         <div ref={formRef} className="bg-transparent md:bg-white mt-5 rounded-lg md:px-10 lg:px-32 py-10">
